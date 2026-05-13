@@ -18,11 +18,21 @@ class Base(DeclarativeBase):
     pass
 
 
+def _connect_args() -> dict[str, object]:
+    # Fly's internal Postgres on .flycast / .internal is plaintext — disable
+    # asyncpg's default SSL handshake (which prefers TLS) or it ConnectionReset's.
+    url = settings.DATABASE_URL
+    if ".flycast" in url or ".internal" in url:
+        return {"ssl": False}
+    return {}
+
+
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=False,
     pool_pre_ping=True,
     future=True,
+    connect_args=_connect_args(),
 )
 
 AsyncSessionLocal = async_sessionmaker(
