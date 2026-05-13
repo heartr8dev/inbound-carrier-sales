@@ -429,9 +429,9 @@ async def test_cache_hit_does_not_call_fmcsa_twice(
         assert res2.status_code == 200
         assert res2.json()["cached"] is True
 
-        assert route.call_count == 1, (
-            f"Expected exactly 1 FMCSA call, got {route.call_count}"
-        )
+        assert (
+            route.call_count == 1
+        ), f"Expected exactly 1 FMCSA call, got {route.call_count}"
 
 
 # --------------------------------------------------------------------------- #

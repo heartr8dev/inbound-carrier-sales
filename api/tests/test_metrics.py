@@ -382,9 +382,9 @@ async def test_aggregator_returns_plausible_numbers_with_mock_data() -> None:
         funnel = {s.name: s.count for s in result.funnel.stages}
         assert funnel["Total calls"] == 80
 
-        assert funnel["Booked"] > 0, (
-            "with 80 calls at 35% booked weight, we expect some bookings"
-        )
+        assert (
+            funnel["Booked"] > 0
+        ), "with 80 calls at 35% booked weight, we expect some bookings"
 
         dist_sum = sum(d.count for d in result.sentiment.distribution)
         assert dist_sum == 80
