@@ -1,0 +1,30 @@
+{
+  "name": "search_loads",
+  "description": "Search the load board for matching loads. Call this ONLY after you have origin city/state, destination city/state, equipment type, and pickup date. Returns top-3 ranked matches. If total_found is 0, no loads match — offer to try a different lane or take a callback. If partial is true, the matches are origin-only (close-but-not-exact); pitch them as such.",
+  "parameters": [
+    {
+      "name": "origin",
+      "type": "string",
+      "required": true,
+      "description": "Origin city and state, e.g. 'Dallas, TX' or 'Dallas Texas'."
+    },
+    {
+      "name": "destination",
+      "type": "string",
+      "required": true,
+      "description": "Destination city and state, e.g. 'Atlanta, GA'."
+    },
+    {
+      "name": "equipment_type",
+      "type": "string",
+      "required": true,
+      "description": "One of: dry_van, reefer, flatbed, step_deck, power_only. Map the carrier's words to one of these exact values."
+    },
+    {
+      "name": "pickup_date",
+      "type": "string",
+      "required": true,
+      "description": "Target pickup date in ISO format YYYY-MM-DD. Match within ±2 days."
+    }
+  ]
+}

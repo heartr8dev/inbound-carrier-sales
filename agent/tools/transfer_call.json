@@ -1,0 +1,18 @@
+{
+  "name": "transfer_call",
+  "description": "Mock-transfer the carrier to a human ops rep to finalize the rate confirmation. Call this ONLY after submit_offer returns status=agreed. Returns a success message — relay it warmly, then end the call.",
+  "parameters": [
+    {
+      "name": "load_id",
+      "type": "string",
+      "required": true,
+      "description": "The load_id of the booked load."
+    },
+    {
+      "name": "final_rate",
+      "type": "number",
+      "required": true,
+      "description": "The agreed-upon rate (USD, no symbols)."
+    }
+  ]
+}

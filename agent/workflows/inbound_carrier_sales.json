@@ -1,0 +1,59 @@
+{
+  "name": "Inbound Carrier Sales",
+  "workflow_id": "019e1f1e-9371-7515-82ad-ce15cd66418d",
+  "slug": "l52g564dq2gf",
+  "version_id": "019e1f1e-937d-790c-af26-12f2de41f33b",
+  "version_slug": "tjkjsddmtzio",
+  "version_number": 1,
+  "live": true,
+  "environment": "production",
+  "editor_url": "https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/l52g564dq2gf/editor/tjkjsddmtzio",
+  "description": "Acme Logistics inbound carrier sales: FMCSA vet, load match, 3-round negotiation, mock transfer.",
+  "agent": {
+    "name": "Riley",
+    "voice_id": "qpwlpzgt2xxw",
+    "voice_name": "Jenna - Clear, Engaging and Warm",
+    "language": "en",
+    "model_id": "gpt-5.1-instant",
+    "initial_message": "Hi, thanks for calling Acme Logistics carrier sales — this is Riley. What lane are you running today?"
+  },
+  "trigger": {
+    "type": "webhook_predefined",
+    "event_id": "b329e750-2e0e-4618-ba65-e04bb6a93c5f",
+    "persistent_id": "019e1f1e-9398-7c28-8f43-ad80e342a461",
+    "params": ["call_id", "carrier_phone", "room_name"]
+  },
+  "tools": [
+    {
+      "name": "verify_carrier",
+      "persistent_id": "019e1f1e-93d7-7b2d-873c-9c09dd090fe2",
+      "webhook_persistent_id": "019e1f1e-93e0-7d95-a985-cd312ebe1028",
+      "endpoint": "/api/v1/carrier/verify"
+    },
+    {
+      "name": "search_loads",
+      "persistent_id": "019e1f1e-93f0-71d3-991e-0a69881246bf",
+      "webhook_persistent_id": "019e1f1e-93f9-706e-98ee-13e8a0e01d3c",
+      "endpoint": "/api/v1/loads/search"
+    },
+    {
+      "name": "submit_offer",
+      "persistent_id": "019e1f1e-9409-7423-827a-c2a6a203c46c",
+      "webhook_persistent_id": "019e1f1e-9412-7cff-9b4c-0170f034d5b1",
+      "endpoint": "/api/v1/negotiate"
+    },
+    {
+      "name": "transfer_call",
+      "persistent_id": "019e1f1e-9420-71ee-98b0-bacc88501b27",
+      "python_persistent_id": "019e1f1e-9428-7a89-b8ec-6662d1cdeeb3",
+      "endpoint": null
+    }
+  ],
+  "post_call": {
+    "ai_extract_persistent_id": "019e1f1e-943a-7804-9a97-6fe876e3bfe7",
+    "log_webhook_persistent_id": "019e1f1e-944e-7d31-a27a-7da219390c1e",
+    "log_endpoint": "/api/v1/calls/log"
+  },
+  "api_base_url_placeholder": "https://inbound-carrier-sales-api.fly.dev",
+  "api_key_placeholder": "devkey-please-change"
+}

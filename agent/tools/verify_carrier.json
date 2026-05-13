@@ -1,0 +1,12 @@
+{
+  "name": "verify_carrier",
+  "description": "Look up a motor carrier by MC docket number via the FMCSA SAFER API to verify operating authority, safety rating, and insurance. Call this FIRST after the carrier states their MC number. Returns is_eligible boolean plus rejection_reason if not eligible. If is_eligible is null, FMCSA is unavailable — proceed cautiously and tell the carrier our system is double-checking on the back end.",
+  "parameters": [
+    {
+      "name": "mc_number",
+      "type": "string",
+      "required": true,
+      "description": "MC docket number, digits only, 1-8 chars. Strip any 'MC' prefix the carrier says."
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "name": "submit_offer",
+  "description": "Submit a carrier's counter-offer to the pricing engine and get a decision: agreed, counter, or walked_away. Pass the FULL negotiation state every time (the engine is stateless). Use the returned suggested_response verbatim or lightly paraphrased. Hard cap at 3 rounds. Never quote below the floor the engine enforces — if status is 'walked_away', end the negotiation gracefully.",
+  "parameters": [
+    {
+      "name": "load_id",
+      "type": "string",
+      "required": true,
+      "description": "The load_id of the load being negotiated (from search_loads response)."
+    },
+    {
+      "name": "loadboard_rate",
+      "type": "number",
+      "required": true,
+      "description": "The original listed loadboard rate for this load (USD, no symbols)."
+    },
+    {
+      "name": "round",
+      "type": "integer",
+      "required": true,
+      "description": "Which round this is. 1 on the carrier's first counter-offer, 2 on their second, 3 on their third. Never exceed 3."
+    },
+    {
+      "name": "agent_last_offer",
+      "type": "number",
+      "required": true,
+      "description": "Your most recent quoted rate. On round 1 this equals loadboard_rate."
+    },
+    {
+      "name": "carrier_offer",
+      "type": "number",
+      "required": true,
+      "description": "The carrier's new counter-offer (USD, no symbols)."
+    },
+    {
+      "name": "carrier_sentiment",
+      "type": "string",
+      "required": false,
+      "description": "Your read of the carrier's emotional state: positive | neutral | skeptical | frustrated | hostile. Influences concession depth on rounds 2-3."
+    },
+    {
+      "name": "origin",
+      "type": "string",
+      "required": false,
+      "description": "Origin for the loading load (used in the suggested_response template)."
+    },
+    {
+      "name": "destination",
+      "type": "string",
+      "required": false,
+      "description": "Destination for the load."
+    }
+  ]
+}
