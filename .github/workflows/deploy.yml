@@ -110,18 +110,8 @@ jobs:
             MAX_DISCOUNT_PCT=0.10 \
             --app inbound-carrier-sales-api
 
-      - name: Deploy API
+      - name: Deploy API (release_command in fly.toml runs migrations + seed)
         run: flyctl deploy --config fly.toml --remote-only
-
-      - name: Run alembic migrations on production
-        run: |
-          flyctl ssh console --app inbound-carrier-sales-api \
-            -C "sh -c 'cd /app && alembic -c api/alembic.ini upgrade head'"
-
-      - name: Seed database (skip if exists)
-        run: |
-          flyctl ssh console --app inbound-carrier-sales-api \
-            -C "sh -c 'cd /app && python scripts/seed_db.py --skip-if-exists'"
 
       - name: Smoke test (/health)
         run: curl -fsS https://inbound-carrier-sales-api.fly.dev/health

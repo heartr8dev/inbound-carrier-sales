@@ -11,6 +11,13 @@ primary_region = "iad"
   PORT = "8080"
   PYTHONPATH = "/app"
 
+[deploy]
+  # Run migrations + idempotent seed in a temporary release machine before the
+  # new app machines roll out. Removes the need for a separate `flyctl ssh
+  # console` step in CI, and works even if the long-running machine has been
+  # auto-stopped between deploys.
+  release_command = "sh -c 'cd /app && alembic -c api/alembic.ini upgrade head && python scripts/seed_db.py --skip-if-exists'"
+
 [http_service]
   internal_port = 8080
   force_https = true
