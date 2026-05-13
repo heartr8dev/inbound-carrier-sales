@@ -3,9 +3,27 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def normalize_db_url(url: str) -> str:
+    """Coerce a Postgres URL into SQLAlchemy + asyncpg form.
+
+    Fly Postgres attach writes DATABASE_URL=postgres://... ?sslmode=disable, but
+    SQLAlchemy needs an explicit driver (+asyncpg) and asyncpg ignores libpq's
+    sslmode query param. Strip both and let runtime/connect_args control TLS.
+    """
+    if not url:
+        return url
+    parts = urlsplit(url)
+    scheme = parts.scheme
+    if scheme in {"postgres", "postgresql"}:
+        scheme = "postgresql+asyncpg"
+    query = [(k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True) if k != "sslmode"]
+    return urlunsplit((scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
 
 
 class Settings(BaseSettings):
@@ -25,6 +43,11 @@ class Settings(BaseSettings):
     FMCSA_CIRCUIT_OPEN_SECONDS: float = Field(default=60.0, gt=0.0, le=3600.0)
     API_KEY: str = "devkey-please-change"
     DATABASE_URL: str = "postgresql+asyncpg://app:app@db:5432/inbound"
+
+    @field_validator("DATABASE_URL", mode="after")
+    @classmethod
+    def _normalize_database_url(cls, v: str) -> str:
+        return normalize_db_url(v)
     DASHBOARD_ORIGIN: str = "http://localhost:5173"
     MAX_DISCOUNT_PCT: float = Field(default=0.10, ge=0.0, le=0.5)
 
