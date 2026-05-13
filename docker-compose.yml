@@ -37,8 +37,8 @@ services:
 
   dashboard:
     build:
-      context: .
-      dockerfile: dashboard/Dockerfile
+      context: ./dashboard
+      dockerfile: Dockerfile
     ports:
       - "5173:5173"
     depends_on:
