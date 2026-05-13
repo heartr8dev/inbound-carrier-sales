@@ -1,0 +1,17 @@
+{
+  "name": "happyrobot-demo-video",
+  "private": true,
+  "description": "HyperFrames composition + render dependencies for the 5-minute demo video.",
+  "scripts": {
+    "render": "hyperframes render ./composition.html -o ./output/demo.mp4",
+    "preview": "hyperframes preview",
+    "lint": "hyperframes lint ./composition.html",
+    "doctor": "hyperframes doctor"
+  },
+  "dependencies": {
+    "hyperframes": "latest"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

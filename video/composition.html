@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<!--
+  HyperFrames composition for the 5-minute HappyRobot demo.
+
+  Verified against HyperFrames HTML schema reference
+  (https://hyperframes.mintlify.app/reference/html-schema.md):
+    - Root: <div id="..." data-composition-id="..." data-start="0"
+            data-width="1920" data-height="1080">
+    - Video clips: <video id data-start data-duration
+                          data-track-index src> ; NO class="clip" for <video>.
+    - Visible overlays (div/img): require class="clip" plus
+            data-start / data-duration / data-track-index.
+    - All times are seconds (decimal); no "1:00" / "30s" / "ms" forms.
+
+  Tracks (data-track-index, lowest = bottom):
+    0 = base segment videos (one rectangle for the whole 300s timeline,
+        each starting at its respective offset).
+    1 = lower-third overlay divs.
+    2 = optional logo / endcard layer (reserved, none authored yet).
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>HappyRobot Inbound Carrier-Sales Agent &mdash; Demo</title>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: #000;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      }
+      #main { background: #000; position: relative; }
+
+      video { width: 100%; height: 100%; object-fit: cover; }
+
+      .lower-third {
+        position: absolute;
+        left: 64px;
+        bottom: 80px;
+        padding: 18px 28px;
+        background: rgba(10, 14, 24, 0.78);
+        color: #fff;
+        font-size: 36px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        border-left: 4px solid #4f8cff;
+        border-radius: 4px;
+        backdrop-filter: blur(4px);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="main"
+         data-composition-id="happyrobot-demo"
+         data-start="0"
+         data-width="1920"
+         data-height="1080">
+
+      <!-- ============ Base track (track 0): 6 segments, total 300s ============ -->
+
+      <video id="seg-intro-problem"
+             data-start="0"
+             data-duration="30"
+             data-track-index="0"
+             src="segments/intro_problem.mp4"></video>
+
+      <video id="seg-solution-overview"
+             data-start="30"
+             data-duration="30"
+             data-track-index="0"
+             src="segments/solution_overview.mp4"></video>
+
+      <video id="seg-demo-happy-path"
+             data-start="60"
+             data-duration="90"
+             data-track-index="0"
+             src="recordings/happy_path.mp4"></video>
+
+      <video id="seg-demo-negotiation"
+             data-start="150"
+             data-duration="60"
+             data-track-index="0"
+             src="recordings/negotiation.mp4"></video>
+
+      <video id="seg-dashboard-tour"
+             data-start="210"
+             data-duration="60"
+             data-track-index="0"
+             src="segments/dashboard_tour.mp4"></video>
+
+      <video id="seg-closing"
+             data-start="270"
+             data-duration="30"
+             data-track-index="0"
+             src="segments/closing.mp4"></video>
+
+      <!-- ============ Overlay track (track 1): lower-thirds ============ -->
+
+      <div id="lt-happy-path"
+           class="clip lower-third"
+           data-start="60"
+           data-duration="90"
+           data-track-index="1">Demo: happy path</div>
+
+      <div id="lt-negotiation"
+           class="clip lower-third"
+           data-start="150"
+           data-duration="60"
+           data-track-index="1">Demo: negotiation</div>
+
+      <div id="lt-dashboard"
+           class="clip lower-third"
+           data-start="210"
+           data-duration="60"
+           data-track-index="1">Live dashboard</div>
+
+    </div>
+
+    <!--
+      No GSAP timeline is required for this composition — every clip is
+      controlled purely by data-start / data-duration. If we later add
+      animated lower-third fades, the pattern from the HyperFrames docs is:
+
+        const tl = gsap.timeline({ paused: true });
+        tl.to("#lt-happy-path", { opacity: 1, duration: 0.5 }, 60);
+        tl.to("#lt-happy-path", { opacity: 0, duration: 0.5 }, 149.5);
+        window.__timelines["happyrobot-demo"] = tl;
+    -->
+  </body>
+</html>

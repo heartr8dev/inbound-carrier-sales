@@ -1,0 +1,108 @@
+# 5-minute demo video script for the HappyRobot inbound carrier-sales agent.
+# Consumed by scripts/generate_video.py to drive segment generation and
+# HyperFrames composition assembly.
+#
+# Time-units: start/end are mm:ss strings; duration is derived (end - start)
+# and is also stored in seconds at the visual level for any segment that
+# requires a duration to be passed to Seedance.
+#
+# kinds:
+#   avatar_lipsync   - GPT Image 2 still -> Seedance image-to-video, lipsynced
+#                      to the ElevenLabs narration WAV.
+#   b_roll           - Seedance text-to-video from a prompt file. Narration
+#                      is muxed onto the rendered MP4 with ffmpeg.
+#   screen_recording - Pre-recorded MP4 from video/recordings/. The script
+#                      does NOT generate these; see recordings/README.md.
+
+composition:
+  width: 1920
+  height: 1080
+  fps: 30
+  total_duration_seconds: 300
+
+segments:
+  - id: intro_problem
+    start: "0:00"
+    end: "0:30"
+    narration: >-
+      Carrier sales teams spend hours every day on inbound calls that all
+      start the same way: vetting MC numbers, pitching loads, negotiating
+      rates. Eight in ten of those calls don't close. That's a margin and
+      morale problem.
+    visual:
+      kind: avatar_lipsync
+      reference_image: prompts/avatar_reference.txt
+      video_model: seedance-2-image-to-video
+      duration: 30
+
+  - id: solution_overview
+    start: "0:30"
+    end: "1:00"
+    narration: >-
+      We built an inbound voice agent on HappyRobot that handles every
+      step automatically: FMCSA verification, load matching, dynamic
+      negotiation, and structured handoff to a sales rep when a deal is
+      on the table.
+    visual:
+      kind: b_roll
+      prompt: prompts/dispatch_office.txt
+      video_model: seedance-2-text-to-video
+      duration: 30
+
+  - id: demo_happy_path
+    start: "1:00"
+    end: "2:30"
+    narration: ""  # uses recording audio
+    visual:
+      kind: screen_recording
+      file: recordings/happy_path.mp4
+      duration: 90
+
+  - id: demo_negotiation
+    start: "2:30"
+    end: "3:30"
+    narration: ""  # uses recording audio
+    visual:
+      kind: screen_recording
+      file: recordings/negotiation.mp4
+      duration: 60
+
+  - id: dashboard_tour
+    start: "3:30"
+    end: "4:30"
+    narration: >-
+      Every call lands in a live dashboard: funnel conversion, revenue
+      preserved against loadboard, sentiment by outcome, and the lanes
+      that are working. Sales ops gets the same view as the broker floor.
+    visual:
+      kind: screen_recording
+      file: recordings/dashboard.mp4
+      duration: 60
+
+  - id: closing
+    start: "4:30"
+    end: "5:00"
+    narration: >-
+      This is built, deployed, and ready to demo end-to-end. We'd love
+      to walk through it live.
+    visual:
+      kind: avatar_lipsync
+      reference_image: prompts/avatar_reference.txt
+      video_model: seedance-2-image-to-video
+      duration: 30
+
+# Optional lower-third labels rendered as DOM overlays in composition.html.
+# These are written verbatim as the inner text of an overlay <div>.
+overlays:
+  - segment: demo_happy_path
+    text: "Demo: happy path"
+  - segment: demo_negotiation
+    text: "Demo: negotiation"
+  - segment: dashboard_tour
+    text: "Live dashboard"
+
+# ElevenLabs voice configuration. The voice_id is read at runtime; if unset,
+# the script falls back to ELEVENLABS_VOICE_ID env var.
+tts:
+  model_id: eleven_turbo_v2_5
+  voice_id_env: ELEVENLABS_VOICE_ID
