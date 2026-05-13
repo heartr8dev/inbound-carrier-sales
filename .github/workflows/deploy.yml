@@ -132,16 +132,12 @@ jobs:
       - name: Setup flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
 
-      - name: Set Fly secrets (dashboard build-time)
-        run: |
-          flyctl secrets set \
-            VITE_API_BASE_URL="https://inbound-carrier-sales-api.fly.dev/api/v1" \
-            VITE_API_KEY="$API_KEY" \
-            --app inbound-carrier-sales-dashboard
-
-      - name: Deploy dashboard
+      - name: Deploy dashboard (VITE_* vars passed as Docker build-args)
         working-directory: dashboard
-        run: flyctl deploy --remote-only
+        run: |
+          flyctl deploy --remote-only \
+            --build-arg VITE_API_BASE_URL="https://inbound-carrier-sales-api.fly.dev/api/v1" \
+            --build-arg VITE_API_KEY="$API_KEY"
 
       - name: Smoke test (dashboard root)
         run: curl -fsS https://inbound-carrier-sales-dashboard.fly.dev/ | head -c 200
