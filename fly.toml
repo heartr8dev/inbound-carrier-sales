@@ -14,9 +14,12 @@ primary_region = "iad"
 [http_service]
   internal_port = 8080
   force_https = true
+  # Keep one machine warm so deploy-step `flyctl ssh console` always has a target
+  # for alembic migrations + seed. Cold-start latency on first call also matters
+  # for the demo, so this is worth the small ongoing cost.
   auto_stop_machines = "stop"
   auto_start_machines = true
-  min_machines_running = 0
+  min_machines_running = 1
   processes = ["app"]
 
   [http_service.concurrency]
