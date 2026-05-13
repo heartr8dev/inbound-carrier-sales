@@ -94,7 +94,9 @@ async def log_call(
                 "carrier_company": row.carrier_company,
                 "load_id_discussed": row.load_id_discussed,
                 "final_agreed_rate": (
-                    str(row.final_agreed_rate) if row.final_agreed_rate is not None else None
+                    str(row.final_agreed_rate)
+                    if row.final_agreed_rate is not None
+                    else None
                 ),
                 "created_at": row.created_at.isoformat(),
             },
@@ -102,7 +104,9 @@ async def log_call(
     except Exception as exc:  # pragma: no cover - defensive
         logger.warning("event_publish_failed", error=str(exc), call_id=row.call_id)
 
-    return CallLogResponse(call_id=payload.call_id, outcome=outcome, sentiment=sentiment)
+    return CallLogResponse(
+        call_id=payload.call_id, outcome=outcome, sentiment=sentiment
+    )
 
 
 @router.get("", response_model=CallListResponse, status_code=status.HTTP_200_OK)

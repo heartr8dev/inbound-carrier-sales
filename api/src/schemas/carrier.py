@@ -9,7 +9,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class CarrierVerifyRequest(BaseModel):
-    mc: str = Field(..., min_length=1, max_length=8, description="MC docket number digits only.")
+    mc: str = Field(
+        ..., min_length=1, max_length=8, description="MC docket number digits only."
+    )
 
 
 class CarrierVerifyResponse(BaseModel):

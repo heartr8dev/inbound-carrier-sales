@@ -44,7 +44,9 @@ from api.src.schemas.metrics import (
 # ---------------------------------------------------------------------------
 
 
-def _period_window(period: MetricsPeriod, now: datetime | None = None) -> tuple[datetime | None, datetime]:
+def _period_window(
+    period: MetricsPeriod, now: datetime | None = None
+) -> tuple[datetime | None, datetime]:
     """Return ``(start_inclusive, end_exclusive)`` for the given ``period``.
 
     ``start`` is ``None`` for ``"all"`` so callers know to skip the lower-bound
@@ -112,9 +114,7 @@ async def _kpi_and_revenue(
     stmt = select(
         func.count().label("total_in_period"),
         func.coalesce(
-            func.sum(
-                case((CallLog.created_at >= today_start, 1), else_=0)
-            ),
+            func.sum(case((CallLog.created_at >= today_start, 1), else_=0)),
             0,
         ).label("calls_today"),
         func.coalesce(func.sum(case((booked, 1), else_=0)), 0).label("booked_count"),
@@ -131,9 +131,15 @@ async def _kpi_and_revenue(
             0,
         ).label("avg_margin_saved"),
         func.coalesce(func.avg(CallLog.negotiation_rounds), 0).label("avg_rounds"),
-        func.avg(case((has_lb, CallLog.loadboard_rate), else_=None)).label("avg_loadboard"),
-        func.avg(case((and_(booked, has_final), CallLog.final_agreed_rate), else_=None)).label("avg_booked"),
-        func.avg(case((and_(booked, has_lb, has_final), margin_preserved_pct), else_=None)).label("avg_margin_preserved"),
+        func.avg(case((has_lb, CallLog.loadboard_rate), else_=None)).label(
+            "avg_loadboard"
+        ),
+        func.avg(
+            case((and_(booked, has_final), CallLog.final_agreed_rate), else_=None)
+        ).label("avg_booked"),
+        func.avg(
+            case((and_(booked, has_lb, has_final), margin_preserved_pct), else_=None)
+        ).label("avg_margin_preserved"),
     ).where(_period_filter(start, end))
 
     row = (await session.execute(stmt)).one()
@@ -158,20 +164,28 @@ async def _kpi_and_revenue(
     return kpi, revenue
 
 
-async def _funnel(session: AsyncSession, start: datetime | None, end: datetime) -> FunnelSection:
+async def _funnel(
+    session: AsyncSession, start: datetime | None, end: datetime
+) -> FunnelSection:
     """5-stage funnel via 5 conditional aggregates in a single query."""
     qualified_cond = CallLog.outcome != CallOutcome.CARRIER_FAILED_VETTING
     matched_cond = ~CallLog.outcome.in_(
         [CallOutcome.NO_MATCHING_LOADS, CallOutcome.CARRIER_FAILED_VETTING]
     )
     negotiated_cond = CallLog.negotiation_rounds > 0
-    booked_cond = CallLog.outcome.in_([CallOutcome.BOOKED, CallOutcome.TRANSFERRED_TO_REP])
+    booked_cond = CallLog.outcome.in_(
+        [CallOutcome.BOOKED, CallOutcome.TRANSFERRED_TO_REP]
+    )
 
     stmt = select(
         func.count().label("total"),
-        func.coalesce(func.sum(case((qualified_cond, 1), else_=0)), 0).label("qualified"),
+        func.coalesce(func.sum(case((qualified_cond, 1), else_=0)), 0).label(
+            "qualified"
+        ),
         func.coalesce(func.sum(case((matched_cond, 1), else_=0)), 0).label("matched"),
-        func.coalesce(func.sum(case((negotiated_cond, 1), else_=0)), 0).label("negotiated"),
+        func.coalesce(func.sum(case((negotiated_cond, 1), else_=0)), 0).label(
+            "negotiated"
+        ),
         func.coalesce(func.sum(case((booked_cond, 1), else_=0)), 0).label("booked"),
     ).where(_period_filter(start, end))
 
@@ -212,7 +226,8 @@ async def _negotiation(
     discount_expr = case(
         (
             and_(booked, has_lb, has_final, CallLog.loadboard_rate > 0),
-            (CallLog.loadboard_rate - CallLog.final_agreed_rate) / CallLog.loadboard_rate,
+            (CallLog.loadboard_rate - CallLog.final_agreed_rate)
+            / CallLog.loadboard_rate,
         ),
         else_=None,
     )
@@ -249,7 +264,9 @@ async def _negotiation(
     return NegotiationSection(buckets=[by_round[r] for r in (1, 2, 3)])
 
 
-async def _vetting(session: AsyncSession, start: datetime | None, end: datetime) -> VettingSection:
+async def _vetting(
+    session: AsyncSession, start: datetime | None, end: datetime
+) -> VettingSection:
     """Pass/fail counts from call_logs, plus top rejection reasons from carrier_verifications.
 
     Two queries here because the reason text lives on ``CarrierVerification``,
@@ -337,7 +354,8 @@ async def _sentiment(
     for r in dist_rows:
         by_sentiment[r.sentiment] = int(r.n)
     distribution = [
-        SentimentDistribution(sentiment=s, count=by_sentiment[s]) for s in CarrierSentiment
+        SentimentDistribution(sentiment=s, count=by_sentiment[s])
+        for s in CarrierSentiment
     ]
 
     return SentimentSection(distribution=distribution, heatmap=heatmap)
@@ -443,7 +461,9 @@ async def _recent_calls(
 # ---------------------------------------------------------------------------
 
 
-async def aggregate_metrics(session: AsyncSession, period: MetricsPeriod) -> MetricsResponse:
+async def aggregate_metrics(
+    session: AsyncSession, period: MetricsPeriod
+) -> MetricsResponse:
     """Compute the full dashboard payload for ``period`` in ~9 SQL queries."""
     now = datetime.now(timezone.utc)
     start, end = _period_window(period, now=now)

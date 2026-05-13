@@ -101,7 +101,9 @@ async def _open_sse(
     return reader, writer, headers, status
 
 
-async def _read_chunked_frame(reader: asyncio.StreamReader, timeout: float = 2.0) -> str:
+async def _read_chunked_frame(
+    reader: asyncio.StreamReader, timeout: float = 2.0
+) -> str:
     """Read enough chunked-transfer-encoded bytes to produce one SSE frame (``\\n\\n``)."""
 
     buffer = ""
@@ -120,7 +122,9 @@ async def _read_chunked_frame(reader: asyncio.StreamReader, timeout: float = 2.0
             continue
         if chunk_size == 0:
             raise ConnectionError("server closed the stream")
-        chunk = await asyncio.wait_for(reader.readexactly(chunk_size), timeout=remaining)
+        chunk = await asyncio.wait_for(
+            reader.readexactly(chunk_size), timeout=remaining
+        )
         # Trailing CRLF after chunk.
         await asyncio.wait_for(reader.readexactly(2), timeout=remaining)
         buffer += chunk.decode("utf-8", errors="replace")
@@ -229,9 +233,7 @@ async def test_publish_reaches_subscriber() -> None:
     api_key = settings.API_KEY
     call_id = f"sse-test-{asyncio.get_event_loop().time():.6f}"
 
-    reader, writer, _headers, status = await _open_sse(
-        STREAM_PATH, api_key=api_key
-    )
+    reader, writer, _headers, status = await _open_sse(STREAM_PATH, api_key=api_key)
     try:
         assert status == 200, status
 

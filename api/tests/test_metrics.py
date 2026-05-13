@@ -119,7 +119,9 @@ async def test_empty_slice_returns_zeroed_metrics() -> None:
     assert result.sentiment.heatmap == []
 
     assert result.load_matching.top_lanes == []
-    assert {e.equipment_type for e in result.load_matching.equipment_demand} == set(EquipmentType)
+    assert {e.equipment_type for e in result.load_matching.equipment_demand} == set(
+        EquipmentType
+    )
     assert all(e.count == 0 for e in result.load_matching.equipment_demand)
 
     assert result.timeseries.points == []

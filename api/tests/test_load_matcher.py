@@ -116,7 +116,9 @@ def _filter_to_test_rows(matches: list, prefix: str) -> list:
 
 
 @pytest.mark.asyncio(loop_scope="session")
-async def test_exact_match_returns_ranked_top_three(inserted_load_ids: list[str]) -> None:
+async def test_exact_match_returns_ranked_top_three(
+    inserted_load_ids: list[str],
+) -> None:
     """Exact-lane requests should produce up to 3 matches ranked by score then rate/mile.
 
     Uses a fictional state ("ZZ") so the developer seed (real US lanes) can't
@@ -198,8 +200,14 @@ async def test_city_alias_dfw_matches_dallas(inserted_load_ids: list[str]) -> No
     suite_prefix = f"{TEST_PREFIX}{uuid.uuid4().hex[:6]}-"
 
     loads = [
-        _make_load(load_id=f"{suite_prefix}DAL", origin="Dallas, TX", destination="Atlanta, GA"),
-        _make_load(load_id=f"{suite_prefix}HOU", origin="Houston, TX", destination="Atlanta, GA"),
+        _make_load(
+            load_id=f"{suite_prefix}DAL", origin="Dallas, TX", destination="Atlanta, GA"
+        ),
+        _make_load(
+            load_id=f"{suite_prefix}HOU",
+            origin="Houston, TX",
+            destination="Atlanta, GA",
+        ),
     ]
     await _insert(loads, inserted_load_ids)
 
@@ -218,7 +226,9 @@ async def test_city_alias_dfw_matches_dallas(inserted_load_ids: list[str]) -> No
 
 
 @pytest.mark.asyncio(loop_scope="session")
-async def test_equipment_mismatch_returns_zero_matches(inserted_load_ids: list[str]) -> None:
+async def test_equipment_mismatch_returns_zero_matches(
+    inserted_load_ids: list[str],
+) -> None:
     """Equipment type is a hard filter — when no candidates exist we report 0 matches and partial=False."""
     suite_prefix = f"{TEST_PREFIX}{uuid.uuid4().hex[:6]}-"
 
@@ -329,7 +339,9 @@ async def test_origin_only_fallback_marks_partial(inserted_load_ids: list[str]) 
 
 
 @pytest.mark.asyncio(loop_scope="session")
-async def test_pickup_date_outside_window_excluded(inserted_load_ids: list[str]) -> None:
+async def test_pickup_date_outside_window_excluded(
+    inserted_load_ids: list[str],
+) -> None:
     """Loads picking up more than +/- 2 days from the requested date must be filtered out."""
     suite_prefix = f"{TEST_PREFIX}{uuid.uuid4().hex[:6]}-"
 

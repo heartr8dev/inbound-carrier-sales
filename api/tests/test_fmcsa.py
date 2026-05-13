@@ -11,7 +11,6 @@ Real FMCSA payload field names are pinned from
 
 from __future__ import annotations
 
-import uuid
 from collections.abc import AsyncIterator
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -72,9 +71,7 @@ def _carrier_payload(
         "content": [
             {
                 "_links": {
-                    "self": {
-                        "href": f"{FMCSA_HOST}/qc/services/carriers/{dot_number}"
-                    }
+                    "self": {"href": f"{FMCSA_HOST}/qc/services/carriers/{dot_number}"}
                 },
                 "carrier": {
                     "allowedToOperate": allowed,

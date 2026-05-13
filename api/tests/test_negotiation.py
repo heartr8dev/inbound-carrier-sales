@@ -36,7 +36,9 @@ def _assert_default_discount() -> None:
     )
 
 
-def _initial_state(loadboard: str = "1000.00", load_id: str = "LD-TEST") -> NegotiationState:
+def _initial_state(
+    loadboard: str = "1000.00", load_id: str = "LD-TEST"
+) -> NegotiationState:
     return NegotiationState(
         load_id=load_id,
         loadboard_rate=Decimal(loadboard),
@@ -147,7 +149,10 @@ def test_walk_away_on_round_three_below_floor() -> None:
     assert res.state.status == "walked_away"
     assert res.state.round == 3
     assert res.state.final_rate is None
-    assert "doesn't work" in res.suggested_response.lower() or "appreciate" in res.suggested_response.lower()
+    assert (
+        "doesn't work" in res.suggested_response.lower()
+        or "appreciate" in res.suggested_response.lower()
+    )
 
 
 # ---------------------------------------------------------------------------

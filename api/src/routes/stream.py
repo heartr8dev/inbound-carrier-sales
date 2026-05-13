@@ -121,7 +121,9 @@ async def _event_generator(request: Request) -> AsyncIterator[str]:
 @router.get("/stream")
 async def stream_calls(
     request: Request,
-    api_key: str = Query(default="", description="API key (EventSource can't send headers)"),
+    api_key: str = Query(
+        default="", description="API key (EventSource can't send headers)"
+    ),
 ) -> StreamingResponse:
     """SSE stream of call lifecycle events.
 

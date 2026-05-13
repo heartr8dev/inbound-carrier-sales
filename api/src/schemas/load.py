@@ -34,8 +34,12 @@ class LoadOut(LoadBase):
 
 
 class LoadSearchRequest(BaseModel):
-    origin: str | None = Field(default=None, description="Free-form origin string from the carrier.")
-    destination: str | None = Field(default=None, description="Free-form destination string.")
+    origin: str | None = Field(
+        default=None, description="Free-form origin string from the carrier."
+    )
+    destination: str | None = Field(
+        default=None, description="Free-form destination string."
+    )
     equipment_type: EquipmentType | None = None
     pickup_date: datetime | None = Field(
         default=None, description="Target pickup date — matched within +/- 2 days."
@@ -46,7 +50,9 @@ class LoadSearchRequest(BaseModel):
 class LoadMatch(LoadBase):
     score: int = Field(..., ge=0, le=100)
     rate_per_mile: Decimal
-    match_score: int = Field(..., ge=0, le=100, description="Alias of score; preferred name per spec.")
+    match_score: int = Field(
+        ..., ge=0, le=100, description="Alias of score; preferred name per spec."
+    )
     partial_match: bool = Field(
         default=False,
         description="True when this match came from the origin-only fallback rather than the primary filter.",

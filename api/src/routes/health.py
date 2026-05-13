@@ -18,7 +18,9 @@ _PROCESS_START = time.monotonic()
 
 
 @router.get("/health")
-async def health(session: Annotated[AsyncSession, Depends(get_session)]) -> dict[str, object]:
+async def health(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> dict[str, object]:
     db_status = "ok"
     try:
         result = await session.execute(text("SELECT 1"))

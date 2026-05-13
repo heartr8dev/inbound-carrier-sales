@@ -17,7 +17,9 @@ router = APIRouter(
 )
 
 
-@router.post("/search", response_model=LoadSearchResponse, status_code=status.HTTP_200_OK)
+@router.post(
+    "/search", response_model=LoadSearchResponse, status_code=status.HTTP_200_OK
+)
 async def search_loads(
     payload: LoadSearchRequest,
     session: AsyncSession = Depends(get_session),

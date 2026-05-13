@@ -22,8 +22,14 @@ def normalize_db_url(url: str) -> str:
     scheme = parts.scheme
     if scheme in {"postgres", "postgresql"}:
         scheme = "postgresql+asyncpg"
-    query = [(k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True) if k != "sslmode"]
-    return urlunsplit((scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
+    query = [
+        (k, v)
+        for k, v in parse_qsl(parts.query, keep_blank_values=True)
+        if k != "sslmode"
+    ]
+    return urlunsplit(
+        (scheme, parts.netloc, parts.path, urlencode(query), parts.fragment)
+    )
 
 
 class Settings(BaseSettings):
@@ -48,6 +54,7 @@ class Settings(BaseSettings):
     @classmethod
     def _normalize_database_url(cls, v: str) -> str:
         return normalize_db_url(v)
+
     DASHBOARD_ORIGIN: str = "http://localhost:5173"
     MAX_DISCOUNT_PCT: float = Field(default=0.10, ge=0.0, le=0.5)
 

@@ -166,10 +166,7 @@ class _CircuitBreaker:
             now = self._now()
             self._prune(now)
             self._failures.append(now)
-            if (
-                self._opened_at is None
-                and len(self._failures) >= self.fail_threshold
-            ):
+            if self._opened_at is None and len(self._failures) >= self.fail_threshold:
                 self._opened_at = now
                 logger.bind(component="fmcsa.circuit").warning(
                     "circuit OPENED after {} failures in {}s window; will retry after {}s",
@@ -531,10 +528,15 @@ class FMCSAClient:
             "dba_name": carrier.get(F_DBA_NAME),
             "operating_status": _derive_operating_status(carrier),
             "authority_type": _derive_authority_type(carrier),
-            "allowed_to_operate": str(carrier.get(F_ALLOWED_TO_OPERATE, "")).upper() == "Y",
+            "allowed_to_operate": str(carrier.get(F_ALLOWED_TO_OPERATE, "")).upper()
+            == "Y",
             "safety_rating": _map_safety_rating(carrier.get(F_SAFETY_RATING)),
-            "insurance_bipd_on_file": _parse_decimal_thousands(carrier.get(F_BIPD_ON_FILE)),
-            "insurance_cargo_on_file": _parse_decimal_thousands(carrier.get(F_CARGO_ON_FILE)),
+            "insurance_bipd_on_file": _parse_decimal_thousands(
+                carrier.get(F_BIPD_ON_FILE)
+            ),
+            "insurance_cargo_on_file": _parse_decimal_thousands(
+                carrier.get(F_CARGO_ON_FILE)
+            ),
             "is_eligible": is_eligible,
             "rejection_reason": reason,
             "raw_response": payload,

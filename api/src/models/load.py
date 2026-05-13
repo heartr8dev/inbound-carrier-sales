@@ -37,12 +37,20 @@ class Load(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         PgUUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    load_id: Mapped[str] = mapped_column(String(32), unique=True, index=True, nullable=False)
+    load_id: Mapped[str] = mapped_column(
+        String(32), unique=True, index=True, nullable=False
+    )
     origin: Mapped[str] = mapped_column(String(128), nullable=False)
     destination: Mapped[str] = mapped_column(String(128), nullable=False)
-    pickup_datetime: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    delivery_datetime: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    equipment_type: Mapped[EquipmentType] = mapped_column(equipment_type_enum, nullable=False)
+    pickup_datetime: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    delivery_datetime: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    equipment_type: Mapped[EquipmentType] = mapped_column(
+        equipment_type_enum, nullable=False
+    )
     loadboard_rate: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     weight: Mapped[int] = mapped_column(Integer, nullable=False)

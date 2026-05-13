@@ -83,10 +83,7 @@ def _round_floor(
     """Lowest price we are willing to sit at this round, sentiment-adjusted."""
 
     concession = _cumulative_concession(round_num)
-    if (
-        sentiment in _AGGRESSIVE_SENTIMENTS
-        and round_num >= 2
-    ):
+    if sentiment in _AGGRESSIVE_SENTIMENTS and round_num >= 2:
         concession += _SENTIMENT_BUMP
     price = loadboard_rate * (Decimal("1") - concession)
     # Sentiment bump (and any future bumps) must never cross floor_price.

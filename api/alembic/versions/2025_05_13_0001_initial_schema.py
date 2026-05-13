@@ -33,8 +33,12 @@ CARRIER_SENTIMENTS = ("positive", "neutral", "skeptical", "frustrated", "hostile
 
 
 def upgrade() -> None:
-    equipment_type = postgresql.ENUM(*EQUIPMENT_TYPES, name="equipment_type", create_type=True)
-    call_outcome = postgresql.ENUM(*CALL_OUTCOMES, name="call_outcome", create_type=True)
+    equipment_type = postgresql.ENUM(
+        *EQUIPMENT_TYPES, name="equipment_type", create_type=True
+    )
+    call_outcome = postgresql.ENUM(
+        *CALL_OUTCOMES, name="call_outcome", create_type=True
+    )
     carrier_sentiment = postgresql.ENUM(
         *CARRIER_SENTIMENTS, name="carrier_sentiment", create_type=True
     )
@@ -63,7 +67,9 @@ def upgrade() -> None:
         sa.Column("num_of_pieces", sa.Integer(), nullable=False),
         sa.Column("miles", sa.Integer(), nullable=False),
         sa.Column("dimensions", sa.String(64), nullable=False),
-        sa.Column("is_available", sa.Boolean(), server_default=sa.true(), nullable=False),
+        sa.Column(
+            "is_available", sa.Boolean(), server_default=sa.true(), nullable=False
+        ),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
@@ -102,7 +108,9 @@ def upgrade() -> None:
         ),
         sa.Column(
             "sentiment",
-            postgresql.ENUM(*CARRIER_SENTIMENTS, name="carrier_sentiment", create_type=False),
+            postgresql.ENUM(
+                *CARRIER_SENTIMENTS, name="carrier_sentiment", create_type=False
+            ),
             nullable=False,
         ),
         sa.Column(
@@ -140,7 +148,9 @@ def upgrade() -> None:
         sa.Column("insurance_cargo_on_file", sa.Numeric(12, 2), nullable=True),
         sa.Column("is_eligible", sa.Boolean(), nullable=False),
         sa.Column("rejection_reason", sa.String(255), nullable=True),
-        sa.Column("raw_response", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+        sa.Column(
+            "raw_response", postgresql.JSONB(astext_type=sa.Text()), nullable=False
+        ),
         sa.Column(
             "verified_at",
             sa.DateTime(timezone=True),
@@ -161,8 +171,12 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("ix_carrier_verifications_verified_at", table_name="carrier_verifications")
-    op.drop_index("ix_carrier_verifications_mc_number", table_name="carrier_verifications")
+    op.drop_index(
+        "ix_carrier_verifications_verified_at", table_name="carrier_verifications"
+    )
+    op.drop_index(
+        "ix_carrier_verifications_mc_number", table_name="carrier_verifications"
+    )
     op.drop_table("carrier_verifications")
 
     op.drop_index("ix_call_logs_created_at", table_name="call_logs")

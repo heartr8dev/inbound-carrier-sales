@@ -212,7 +212,9 @@ async def match_loads(
 
     primary = _rank(candidates, q_origin, q_destination, limit=limit)
 
-    matches: list[LoadMatch] = [_to_load_match(load, score, partial=False) for load, score in primary]
+    matches: list[LoadMatch] = [
+        _to_load_match(load, score, partial=False) for load, score in primary
+    ]
 
     partial_used = False
     if len(matches) < limit:
@@ -235,7 +237,9 @@ async def match_loads(
             partial_used = True
 
     logger.bind(
-        equipment_type=criteria.equipment_type.value if criteria.equipment_type else None,
+        equipment_type=criteria.equipment_type.value
+        if criteria.equipment_type
+        else None,
         origin=criteria.origin,
         destination=criteria.destination,
         pickup_date=criteria.pickup_date.isoformat() if criteria.pickup_date else None,
