@@ -150,7 +150,8 @@ jobs:
             --app inbound-carrier-sales-dashboard
 
       - name: Deploy dashboard
-        run: flyctl deploy --config dashboard/fly.toml --remote-only
+        working-directory: dashboard
+        run: flyctl deploy --remote-only
 
       - name: Smoke test (dashboard root)
         run: curl -fsS https://inbound-carrier-sales-dashboard.fly.dev/ | head -c 200

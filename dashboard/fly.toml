@@ -1,13 +1,12 @@
 # Fly.io configuration for the Vite/nginx dashboard.
-# NOTE: dashboard/Dockerfile uses repo-root-relative paths (COPY dashboard/...),
-# so deploys must run from the repo root with --config dashboard/fly.toml.
-# Build context is therefore the repo root, not dashboard/.
+# Deploy with: cd dashboard && flyctl deploy --remote-only
+# Build context is the dashboard/ directory; Dockerfile uses local paths.
 
 app = "inbound-carrier-sales-dashboard"
 primary_region = "iad"
 
 [build]
-  dockerfile = "dashboard/Dockerfile"
+  dockerfile = "Dockerfile"
 
 [http_service]
   internal_port = 5173
