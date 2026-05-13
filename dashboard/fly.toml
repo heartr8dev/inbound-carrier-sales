@@ -1,0 +1,36 @@
+# Fly.io configuration for the Vite/nginx dashboard.
+# NOTE: dashboard/Dockerfile uses repo-root-relative paths (COPY dashboard/...),
+# so deploys must run from the repo root with --config dashboard/fly.toml.
+# Build context is therefore the repo root, not dashboard/.
+
+app = "inbound-carrier-sales-dashboard"
+primary_region = "iad"
+
+[build]
+  dockerfile = "dashboard/Dockerfile"
+
+[http_service]
+  internal_port = 5173
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 80
+    hard_limit = 100
+
+[[http_service.checks]]
+  interval = "30s"
+  timeout = "5s"
+  grace_period = "5s"
+  method = "GET"
+  path = "/"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
+  cpus = 1
+  cpu_kind = "shared"

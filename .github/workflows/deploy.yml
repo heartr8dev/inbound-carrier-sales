@@ -1,0 +1,189 @@
+name: deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Pre-deploy tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: inbound
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d inbound"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      API_KEY: devkey-please-change
+      DATABASE_URL: postgresql+asyncpg://app:app@localhost:5432/inbound
+      ALEMBIC_DATABASE_URL: postgresql+psycopg2://app:app@localhost:5432/inbound
+      FMCSA_WEBKEY: dummy-for-tests
+      PYTHONPATH: ${{ github.workspace }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: api/requirements.txt
+
+      - name: Install API deps
+        run: pip install -r api/requirements.txt
+
+      - name: Run alembic migrations
+        run: alembic -c api/alembic.ini upgrade head
+
+      - name: Ruff check + format
+        run: |
+          ruff check api/
+          ruff format --check api/
+
+      - name: Pytest with coverage
+        run: pytest api/tests --cov=api/src --cov-fail-under=70
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+
+      - name: Dashboard install + lint + typecheck + test + build
+        working-directory: dashboard
+        run: |
+          npm ci
+          npm run lint
+          npm run typecheck
+          npm run test
+          npm run build
+
+  deploy-api:
+    name: Deploy API
+    needs: test
+    runs-on: ubuntu-latest
+
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      API_KEY: ${{ secrets.API_KEY }}
+      HAPPYROBOT_API_KEY: ${{ secrets.HAPPYROBOT_API_KEY }}
+      FMCSA_WEBKEY: ${{ secrets.FMCSA_WEBKEY }}
+      DASHBOARD_ORIGIN: ${{ secrets.DASHBOARD_ORIGIN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Set Fly secrets (API)
+        run: |
+          flyctl secrets set \
+            API_KEY="$API_KEY" \
+            HAPPYROBOT_API_KEY="$HAPPYROBOT_API_KEY" \
+            FMCSA_WEBKEY="$FMCSA_WEBKEY" \
+            DASHBOARD_ORIGIN="$DASHBOARD_ORIGIN" \
+            MAX_DISCOUNT_PCT=0.10 \
+            --app inbound-carrier-sales-api
+
+      - name: Deploy API
+        run: flyctl deploy --config fly.toml --remote-only
+
+      - name: Run alembic migrations on production
+        run: |
+          flyctl ssh console --app inbound-carrier-sales-api \
+            -C "sh -c 'cd /app && alembic -c api/alembic.ini upgrade head'"
+
+      - name: Seed database (skip if exists)
+        run: |
+          flyctl ssh console --app inbound-carrier-sales-api \
+            -C "sh -c 'cd /app && python scripts/seed_db.py --skip-if-exists'"
+
+      - name: Smoke test (/health)
+        run: curl -fsS https://inbound-carrier-sales-api.fly.dev/health
+
+  deploy-dashboard:
+    name: Deploy dashboard
+    needs: deploy-api
+    runs-on: ubuntu-latest
+
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      API_KEY: ${{ secrets.API_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Set Fly secrets (dashboard build-time)
+        run: |
+          flyctl secrets set \
+            VITE_API_BASE_URL="https://inbound-carrier-sales-api.fly.dev/api/v1" \
+            VITE_API_KEY="$API_KEY" \
+            --app inbound-carrier-sales-dashboard
+
+      - name: Deploy dashboard
+        run: flyctl deploy --config dashboard/fly.toml --remote-only
+
+      - name: Smoke test (dashboard root)
+        run: curl -fsS https://inbound-carrier-sales-dashboard.fly.dev/ | head -c 200
+
+  update-happyrobot-workflow:
+    name: Update HappyRobot workflow
+    needs: deploy-api
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    env:
+      API_KEY: ${{ secrets.API_KEY }}
+      HAPPYROBOT_API_KEY: ${{ secrets.HAPPYROBOT_API_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install API deps (script reuses api dependencies)
+        run: |
+          if [ -f api/requirements.txt ]; then
+            pip install -r api/requirements.txt
+          fi
+
+      - name: Run setup_happyrobot.py (if it exists)
+        run: |
+          if [ -f scripts/setup_happyrobot.py ]; then
+            python scripts/setup_happyrobot.py \
+              --api-base-url=https://inbound-carrier-sales-api.fly.dev \
+              --api-key="$API_KEY" \
+              --hr-api-key="$HAPPYROBOT_API_KEY"
+          else
+            echo "scripts/setup_happyrobot.py not yet present (Workstream G); skipping."
+          fi

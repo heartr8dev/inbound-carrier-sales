@@ -1,0 +1,116 @@
+name: test
+
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - main
+
+jobs:
+  api-tests:
+    name: API tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: inbound
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d inbound"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      API_KEY: devkey-please-change
+      DATABASE_URL: postgresql+asyncpg://app:app@localhost:5432/inbound
+      ALEMBIC_DATABASE_URL: postgresql+psycopg2://app:app@localhost:5432/inbound
+      FMCSA_WEBKEY: dummy-for-tests
+      PYTHONPATH: ${{ github.workspace }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: api/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r api/requirements.txt
+
+      - name: Wait for postgres
+        run: |
+          for i in $(seq 1 30); do
+            pg_isready -h localhost -p 5432 -U app -d inbound && exit 0
+            sleep 1
+          done
+          echo "Postgres did not become ready in time" >&2
+          exit 1
+        env:
+          PGPASSWORD: app
+
+      - name: Run alembic migrations
+        run: alembic -c api/alembic.ini upgrade head
+
+      - name: Lint (ruff check)
+        run: ruff check api/
+
+      - name: Format check (ruff format)
+        run: ruff format --check api/
+
+      - name: Type check (mypy services — strict)
+        run: mypy api/src/services --ignore-missing-imports
+
+      - name: Type check (mypy routes — warn only)
+        continue-on-error: true
+        run: mypy api/src/routes --ignore-missing-imports
+
+      - name: Type check (mypy rest — warn only)
+        continue-on-error: true
+        run: mypy api/src --ignore-missing-imports
+
+      - name: Run pytest with coverage
+        run: pytest api/tests --cov=api/src --cov-fail-under=70
+
+  dashboard-tests:
+    name: Dashboard tests
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: dashboard
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
+        run: npm run build
