@@ -54,6 +54,9 @@ jobs:
       - name: Run alembic migrations
         run: alembic -c api/alembic.ini upgrade head
 
+      - name: Seed loads (needed by test_metrics' mock-call generator FK refs)
+        run: python scripts/seed_db.py --skip-if-exists
+
       - name: Ruff check + format
         run: |
           ruff check api/
