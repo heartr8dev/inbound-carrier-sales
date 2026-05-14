@@ -9,7 +9,7 @@ The Inbound Carrier Sales workflow is **defined as code** under this directory:
 
 The live workflow currently runs at:
 
-> **https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/l52g564dq2gf/editor/ef75jglyg906**
+> **https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/k4ecerqo7z1i/editor/c8r3ptdirmpk**
 
 ## How the workflow was built
 
@@ -72,11 +72,27 @@ A reproducer of the v1→v2 webhook re-point (full Plate JSON for each of the fo
 
 ## Version history
 
-| Version | ID | Note |
+The live workflow is **`Inbound Carrier Sales`** (workflow_id `019e24c6-a691-74bf-bc63-4104aefebb7e`, slug `k4ecerqo7z1i`). It replaces an earlier workflow that was deleted during the trigger-swap rollback below.
+
+| Phase | Version / Workflow | Note |
 |---|---|---|
-| 1 | `019e1f1e-937d-790c-af26-12f2de41f33b` | Initial workflow via MCP. Webhook URLs placeholder. |
-| 2 | `019e2088-a90a-7c2d-a22a-1a3902c243a4` | Webhook `X-API-Key` headers updated to deployed `API_KEY`. |
-| 3 | `019e2484-8bc4-70e0-b69c-9afb3cb536d0` | Added transcriber (Deepgram Nova 3 Multilingual), `enable_denoised_stt`, and freight `keyterms`. STT now works. |
+| Original | `Inbound Carrier Sales` v1 (deleted) | First workflow via MCP. Predefined Webhook trigger; webhook URLs placeholder. |
+| Original v2 | (deleted) | Webhook `X-API-Key` headers updated to deployed `API_KEY`. |
+| Original v3 | (deleted) | Added Deepgram Nova 3 transcriber, `enable_denoised_stt`, freight `keyterms`. |
+| Original v4 attempt | (deleted) | Tried to in-place swap trigger to Inbound Phone. `update_workflow_nodes` silently kept `event_id` — trigger config shape changed but type didn't. Rolled back. |
+| `Inbound Carrier Sales (Phone)` | (deleted) | Fresh workflow with Inbound Phone trigger + Onboarding number. Publish blocked by a stuck platform-side `Dispatch rules conflict for numbers +16282142490` (HTTP 500) that requires HR support to clear. Couldn't proceed programmatically. |
+| **Current — `Inbound Carrier Sales` v1** | `019e24c6-a69b-7d4c-9c71-e8b2906e8379` | Predefined Webhook trigger (`b329e750-...`) with `call_id`, `carrier_phone`, `room_name` params. HR's "Web Call" test in the editor populates `room_name` so the agent has a valid audio source. STT fully wired. End-to-end works for the web-call demo path. |
+
+## Gotchas surfaced during build
+
+1. **Trigger `event_id` is immutable through `update_workflow_nodes`.** The API returns "Updated fields: event_id" but the persistence layer doesn't actually change it. To switch trigger types you must create a new workflow (no fork-and-swap path). Add a regression check or wait for HR to surface this in the public API.
+2. **Inbound Phone trigger + dispatch rules can lock a number to a deleted workflow.** Once a number was claimed in some prior state, even after `manage_workflow action=delete` of the claiming workflow + `manage_versions action=unpublish` on all visible candidates, the dispatch rules don't clear. HR support is the unblock.
+3. **`agent.voices[]` / `agent.languages[]` must be templated-value objects** (`{type: "static", static: {id, name}}`), not bare strings. First publish attempt failed on this.
+4. **`numbers[]` on Inbound Phone trigger expects `{id, name, number}` plain objects**, not templated_value. Different schema shape than voices/languages.
+5. **AI Extract output references** must use `response.` prefix at runtime: `{{<extract_pid>.response.carrier_mc}}`.
+6. **`configuration` is a FULL REPLACE on update** — always `get_node_details` first, mutate, send the complete object back. Sending partial wipes everything else.
+7. **Inbound voice agents need a `transcriber`** — without one, the agent will TTS (speak) but never STT (hear). Default is **not** auto-set, which was the v3 fix in the original workflow.
+8. **Web Call test in HR's editor** works against any trigger that provides a `room_name` to the inbound voice agent. The Predefined Webhook trigger satisfies this when `room_name` is in `configuration.params`. The "no node selected for inbound calls" editor warning is a yellow hint, not a functional blocker for web-call testing.
 
 ## What lives in the snapshot vs the YAML
 

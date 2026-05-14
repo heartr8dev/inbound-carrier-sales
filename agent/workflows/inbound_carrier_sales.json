@@ -1,18 +1,18 @@
 {
   "name": "Inbound Carrier Sales",
-  "workflow_id": "019e1f1e-9371-7515-82ad-ce15cd66418d",
-  "slug": "l52g564dq2gf",
-  "current_live_version_id": "019e2484-8bc4-70e0-b69c-9afb3cb536d0",
-  "current_live_version_slug": "ef75jglyg906",
-  "current_live_version_number": 3,
+  "workflow_id": "019e24c6-a691-74bf-bc63-4104aefebb7e",
+  "slug": "k4ecerqo7z1i",
+  "current_live_version_id": "019e24c6-a69b-7d4c-9c71-e8b2906e8379",
+  "current_live_version_slug": "c8r3ptdirmpk",
+  "current_live_version_number": 1,
   "environment": "production",
-  "editor_url": "https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/l52g564dq2gf/editor/ef75jglyg906",
+  "editor_url": "https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/k4ecerqo7z1i/editor/c8r3ptdirmpk",
   "description": "Acme Logistics inbound carrier sales: FMCSA vet, load match, 3-round negotiation, mock transfer.",
 
   "agent": {
     "name": "Riley",
-    "persistent_id": "019e1f1e-93bd-7c8c-9b20-1697eeaf1e52",
-    "root_prompt_persistent_id": "019e1f1e-93bd-7c8c-9b20-169887ee266a",
+    "persistent_id": "019e24c6-a6c8-79d3-a414-09cfcf344835",
+    "root_prompt_persistent_id": "019e24c6-a6c8-79d3-a414-09d0b313bc11",
     "model_id": "gpt-5.1-instant",
     "voice_id": "qpwlpzgt2xxw",
     "voice_name": "Jenna - Clear, Engaging and Warm",
@@ -30,52 +30,56 @@
   "trigger": {
     "type": "webhook_predefined",
     "event_id": "b329e750-2e0e-4618-ba65-e04bb6a93c5f",
-    "persistent_id": "019e1f1e-9398-7c28-8f43-ad80e342a461",
-    "params": ["call_id", "carrier_phone", "room_name"]
+    "persistent_id": "019e24c6-a6ac-7fcd-8f46-faea08e2f844",
+    "params": ["call_id", "carrier_phone", "room_name"],
+    "note": "Predefined Webhook trigger. HappyRobot's Web Call test populates room_name when initiated from the editor; that's the audio source the inbound voice agent uses. We tried the Inbound Phone trigger (event 0192a20c-cb70-7bf2-977a-b7edc14dcd66) with the Onboarding +16282142490 number but hit a platform-side 'Dispatch rules conflict' (HTTP 500) that requires HR support intervention to clear — falling back to the Predefined Webhook keeps everything programmatically self-serve and works for the web-call test path."
   },
 
   "tools": [
     {
       "name": "verify_carrier",
-      "persistent_id": "019e1f1e-93d7-7b2d-873c-9c09dd090fe2",
-      "webhook_persistent_id": "019e1f1e-93e0-7d95-a985-cd312ebe1028",
+      "persistent_id": "019e24c6-a6d6-7982-8cbc-6ee4be44cc52",
+      "webhook_persistent_id": "019e24c6-a6dc-7fbb-9f4d-512d419442e8",
       "endpoint": "/api/v1/carrier/verify",
       "body_mode": "builder",
       "body_data_keys": ["mc"]
     },
     {
       "name": "search_loads",
-      "persistent_id": "019e1f1e-93f0-71d3-991e-0a69881246bf",
-      "webhook_persistent_id": "019e1f1e-93f9-706e-98ee-13e8a0e01d3c",
+      "persistent_id": "019e24c6-a6e6-7e5a-a460-0baa29683395",
+      "webhook_persistent_id": "019e24c6-a6ec-7f85-96b1-700587d5849f",
       "endpoint": "/api/v1/loads/search",
       "body_mode": "builder",
       "body_data_keys": ["origin", "destination", "equipment_type", "pickup_date"]
     },
     {
       "name": "submit_offer",
-      "persistent_id": "019e1f1e-9409-7423-827a-c2a6a203c46c",
-      "webhook_persistent_id": "019e1f1e-9412-7cff-9b4c-0170f034d5b1",
+      "persistent_id": "019e24c6-a6f5-7ee3-a2a2-634c8da235ee",
+      "webhook_persistent_id": "019e24c6-a6fa-74b7-b5d8-ff417fd1c5ef",
       "endpoint": "/api/v1/negotiate",
       "body_mode": "raw",
       "body_data_keys": ["load_id", "loadboard_rate", "round", "agent_last_offer", "carrier_offer", "carrier_sentiment", "origin", "destination"]
     },
     {
       "name": "transfer_call",
-      "persistent_id": "019e1f1e-9420-71ee-98b0-bacc88501b27",
-      "python_persistent_id": "019e1f1e-9428-7a89-b8ec-6662d1cdeeb3",
+      "persistent_id": "019e24c6-a702-7cd5-a8ef-8224ced1f141",
+      "python_persistent_id": "019e24c6-a708-7cda-94ca-71f5432e1db4",
       "endpoint": null
     }
   ],
 
   "post_call": {
-    "ai_extract_persistent_id": "019e1f1e-943a-7804-9a97-6fe876e3bfe7",
-    "log_webhook_persistent_id": "019e1f1e-944e-7d31-a27a-7da219390c1e",
+    "ai_extract_persistent_id": "019e24c6-a711-72ba-8720-520819dc9f97",
+    "log_webhook_persistent_id": "019e24c6-a71b-7092-9d8b-f1c42a917ef0",
     "log_endpoint": "/api/v1/calls/log"
   },
 
   "version_history": [
-    {"version": 1, "version_id": "019e1f1e-937d-790c-af26-12f2de41f33b", "note": "Initial create_workflow via MCP; webhook URLs/keys placeholder."},
-    {"version": 2, "version_id": "019e2088-a90a-7c2d-a22a-1a3902c243a4", "note": "Webhook X-API-Key headers updated to deployed API_KEY."},
-    {"version": 3, "version_id": "019e2484-8bc4-70e0-b69c-9afb3cb536d0", "note": "Added transcriber (Deepgram Nova 3 Multilingual), enable_denoised_stt, and freight keyterms so the agent can hear the carrier on a web call."}
+    {"version": 1, "workflow": "Inbound Carrier Sales v3 (deprecated)", "note": "Original workflow, Predefined Webhook trigger, webhook URLs placeholder. Deleted during the v4 trigger-swap rollback."},
+    {"version": 2, "workflow": "Inbound Carrier Sales v3 (deprecated)", "note": "Webhook X-API-Key headers updated to deployed API_KEY."},
+    {"version": 3, "workflow": "Inbound Carrier Sales v3 (deprecated)", "note": "Added Deepgram Nova 3 transcriber + enable_denoised_stt + freight keyterms."},
+    {"version": "v4-attempt", "workflow": "Inbound Carrier Sales v3 (deprecated)", "note": "Attempted to in-place swap the trigger to Inbound Phone. HR's update_workflow_nodes silently kept the event_id; trigger configuration changed shape but event_id didn't. Rolled back."},
+    {"version": "Inbound Carrier Sales (Phone)", "note": "Fresh workflow with Inbound Phone trigger + Onboarding number. Publish blocked by a stuck 'Dispatch rules conflict' platform error that needs HR support to clear. Deleted."},
+    {"version": 1, "workflow": "Inbound Carrier Sales (current)", "workflow_id": "019e24c6-a691-74bf-bc63-4104aefebb7e", "version_id": "019e24c6-a69b-7d4c-9c71-e8b2906e8379", "note": "Predefined Webhook trigger with call_id+carrier_phone+room_name params. STT fully wired. Web call test in editor works end-to-end."}
   ]
 }
