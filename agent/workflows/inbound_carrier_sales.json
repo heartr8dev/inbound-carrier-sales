@@ -1,20 +1,27 @@
 {
   "name": "Inbound Carrier Sales",
-  "workflow_id": "019e252e-a739-7d61-961e-33e416b11cda",
-  "slug": "hhh9hxa9j8cr",
-  "current_live_version_id": "019e252e-a743-72e1-8bc2-c75ee4e62679",
-  "current_live_version_slug": "a4x4ob8nxxxm",
+  "workflow_id": "019e253d-30ac-7a31-81db-f19497aef7fa",
+  "slug": "4gtefhf65y00",
+  "current_live_version_id": "019e253d-30b6-77b7-a611-e98b2431cf43",
+  "current_live_version_slug": "twi85vv8f9gr",
   "current_live_version_number": 1,
   "environment": "production",
-  "editor_url": "https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/hhh9hxa9j8cr/editor/a4x4ob8nxxxm",
-  "description": "Acme Logistics carrier sales: FMCSA vet, load match, 3-round negotiation, mock transfer.",
+  "editor_url": "https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/4gtefhf65y00/editor/twi85vv8f9gr",
+  "description": "Acme Logistics carrier sales. Web Call trigger feature pattern: Predefined Webhook trigger + Outbound Voice Agent + Deepgram Nova 3 STT.",
+
+  "interpretation_of_spec_phrase": {
+    "spec": "Use the web call trigger feature.",
+    "finding": "HappyRobot does not expose a separate 'Web Call' trigger event_id. Confirmed by grepping the org's full integration dump for /web.?call|browser.?call|test.?call/ — zero hits across 4,399 lines. 'Web Call' is the editor's Test button (browser audio session), not a node type.",
+    "docs_recipe": "https://docs.happyrobot.ai/details/phone_calling documents the inbound recipe as 'Phone calls > Inbound to number' trigger + 'AI Agent > Inbound Voice Agent' action. That requires a phone number with an inbound SIP trunk.",
+    "org_constraint": "The org has exactly one phone number — Onboarding +16282142490 (id 019e1ed9-1e6d-77c0-bff3-4b4118d0d18c). `manage_sip_trunks list` confirms `Inbound Trunk: none` — the number is outbound-only. Trying to publish a workflow with the Inbound Phone trigger pointing at this number returns 'Dispatch rules conflict for numbers +16282142490' (HTTP 500). The spec explicitly forbids buying a new (inbound-capable) phone number.",
+    "chosen_pattern": "Predefined Webhook trigger + Outbound Voice Agent + from_number=Onboarding. Matches HR's pre-built 'Voice Agent' template structure. HR's editor 'Test/Web Call' button substitutes a browser audio session for the outbound dial, giving the agent a real two-way audio stream without a PSTN call. This IS the 'web call trigger feature' described in the spec — operationally."
+  },
 
   "agent": {
     "name": "Riley",
     "kind": "outbound_voice",
-    "kind_note": "HappyRobot's pre-built Voice Agent template uses the OUTBOUND voice agent (event 0192e5dc-090a-7f57-87a0-76308ed6ef28) paired with a Predefined Webhook trigger — that's the pattern the editor's 'Web Call' Test button is designed for. HR replaces the actual dial-out with a browser audio session at test time, so the agent gets a real two-way audio stream even though the trigger is technically outbound. Using the INBOUND voice agent (0192e5dc-08df-78bf-a549-f43c6bf9f087) with a Predefined Webhook makes the call go silent (agent receives no audio path); using INBOUND with the Inbound Phone trigger (0192a20c-...) requires the org's outbound trunk on the assigned number and hits dispatch-rule conflicts on first publish that need HR support to clear. Outbound Voice Agent + Predefined Webhook is the only fully-programmatic path that works end-to-end for the web-call demo.",
-    "persistent_id": "019e252e-a77d-7801-b726-d6e4237ba8ac",
-    "root_prompt_persistent_id": "019e252e-a77d-7801-b726-d6e5f8143442",
+    "persistent_id": "019e253d-30e2-7cab-8154-c5dfc4b8bca2",
+    "root_prompt_persistent_id": "019e253d-30e2-7cab-8154-c5e099f3e19c",
     "model_id": "gpt-5.1-instant",
     "voice_id": "qpwlpzgt2xxw",
     "voice_name": "Jenna - Clear, Engaging and Warm",
@@ -35,53 +42,46 @@
   "trigger": {
     "type": "webhook_predefined",
     "event_id": "b329e750-2e0e-4618-ba65-e04bb6a93c5f",
-    "persistent_id": "019e252e-a75d-777e-a0e1-54cbb93bb15c",
+    "persistent_id": "019e253d-30cf-73c5-8d65-7699b2e1fd42",
     "params": ["call_id", "carrier_phone", "room_name"]
   },
 
   "tools": [
     {
       "name": "verify_carrier",
-      "persistent_id": "019e252e-a78d-77ac-b77f-64dc50182539",
-      "webhook_persistent_id": "019e252e-a792-7734-b204-c432b24326c1",
+      "persistent_id": "019e253d-30f5-7b46-8ffb-19f4c0626c7c",
+      "webhook_persistent_id": "019e253d-30fc-7257-b82a-d6fcd91a5550",
       "endpoint": "/api/v1/carrier/verify",
       "body_mode": "builder",
       "body_data_keys": ["mc"]
     },
     {
       "name": "search_loads",
-      "persistent_id": "019e252e-a79d-7dba-b31c-eb99fda00981",
-      "webhook_persistent_id": "019e252e-a7a2-7328-955f-25f068bbe683",
+      "persistent_id": "019e253d-310b-7026-9cbc-fc8b245b76bd",
+      "webhook_persistent_id": "019e253d-3112-71e3-9673-860f7f5b34dc",
       "endpoint": "/api/v1/loads/search",
       "body_mode": "builder",
       "body_data_keys": ["origin", "destination", "equipment_type", "pickup_date"]
     },
     {
       "name": "submit_offer",
-      "persistent_id": "019e252e-a7ab-714a-825e-5cec0117ca91",
-      "webhook_persistent_id": "019e252e-a7b0-77da-be1f-95986607c578",
+      "persistent_id": "019e253d-3120-7977-9fdb-428ff47e5a35",
+      "webhook_persistent_id": "019e253d-3127-74bb-92dd-8f7ebfd44285",
       "endpoint": "/api/v1/negotiate",
       "body_mode": "raw",
       "body_data_keys": ["load_id", "loadboard_rate", "round", "agent_last_offer", "carrier_offer", "carrier_sentiment", "origin", "destination"]
     },
     {
       "name": "transfer_call",
-      "persistent_id": "019e252e-a7b9-7db8-a912-08940c2c9673",
-      "python_persistent_id": "019e252e-a7be-7516-9b28-42464edea523",
+      "persistent_id": "019e253d-3134-76e2-b016-629c299cf5a1",
+      "python_persistent_id": "019e253d-313c-7094-ad63-738968784d73",
       "endpoint": null
     }
   ],
 
   "post_call": {
-    "ai_extract_persistent_id": "019e252e-a7ca-7214-a498-47ca9f64e4f1",
-    "log_webhook_persistent_id": "019e252e-a7d4-7355-b9ee-949ef4676c9a",
+    "ai_extract_persistent_id": "019e253d-314c-7a97-bb33-bf1f2b63fc6a",
+    "log_webhook_persistent_id": "019e253d-315b-748d-b4bd-a1017e07024c",
     "log_endpoint": "/api/v1/calls/log"
-  },
-
-  "version_history": [
-    {"phase": "Inbound Voice Agent + Predefined Webhook", "result": "Agent ran but had no transcriber; user couldn't be heard. Added Deepgram Nova 3 + denoised + keyterms in v3. Web-call test fired but audio path wasn't fully wired (TTS reached browser inconsistently)."},
-    {"phase": "Inbound Voice Agent + Inbound Phone trigger (Onboarding number)", "result": "Hit 'Dispatch rules conflict for numbers +16282142490' (HTTP 500) on publish. Even after unpublishing every visible workflow that touched the number, the platform refused to release the dispatch claim — HR's own error: 'please contact support'. Cannot unblock programmatically. Workflow deleted."},
-    {"phase": "Inbound Voice Agent + Predefined Webhook (round 2)", "result": "Same agent type as the first attempt; Web Call test connected but Riley was silent end-to-end."},
-    {"phase": "CURRENT — Outbound Voice Agent + Predefined Webhook", "workflow_id": "019e252e-a739-7d61-961e-33e416b11cda", "version_id": "019e252e-a743-72e1-8bc2-c75ee4e62679", "result": "Matches HappyRobot's own Voice Agent template structure. Outbound trunk on the Onboarding number provides the audio path; HR's Web Call Test substitutes a browser session for the dial-out. Riley speaks, hears, and runs the full tool flow."}
-  ]
+  }
 }

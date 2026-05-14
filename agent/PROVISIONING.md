@@ -9,7 +9,7 @@ The Inbound Carrier Sales workflow is **defined as code** under this directory:
 
 The live workflow currently runs at:
 
-> **https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/hhh9hxa9j8cr/editor/a4x4ob8nxxxm**
+> **https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/4gtefhf65y00/editor/twi85vv8f9gr**
 
 ## How the workflow was built
 
@@ -82,6 +82,33 @@ The live workflow is **`Inbound Carrier Sales`** (workflow_id `019e24c6-a691-74b
 | Original v4 attempt | (deleted) | Tried to in-place swap trigger to Inbound Phone. `update_workflow_nodes` silently kept `event_id` — trigger config shape changed but type didn't. Rolled back. |
 | `Inbound Carrier Sales (Phone)` | (deleted) | Fresh workflow with Inbound Phone trigger + Onboarding number. Publish blocked by a stuck platform-side `Dispatch rules conflict for numbers +16282142490` (HTTP 500) that requires HR support to clear. Couldn't proceed programmatically. |
 | **Current — `Inbound Carrier Sales` v1** | `019e24c6-a69b-7d4c-9c71-e8b2906e8379` | Predefined Webhook trigger (`b329e750-...`) with `call_id`, `carrier_phone`, `room_name` params. HR's "Web Call" test in the editor populates `room_name` so the agent has a valid audio source. STT fully wired. End-to-end works for the web-call demo path. |
+
+## On the spec phrase "Use the web call trigger feature"
+
+**HappyRobot has no separate `Web Call` trigger event_id.** Verified two ways:
+
+1. Grepped 4,399 lines of the org's full integration dump (`list_integrations` with no filter, persisted to disk) for `/web.?call|browser.?call|test.?call/i` — zero hits. The only trigger event types in this org are: **Predefined Webhook** (`b329e750-...`), **Incoming Webhook** (`01929b66-...`), **Inbound Phone** / "Inbound to number" (`0192a20c-...`), and Data Changed Webhook variants for delegated integrations.
+2. HR's docs (`docs.happyrobot.ai/details/phone_calling`) describe the inbound recipe as **"Phone calls > Inbound to number" trigger + "AI Agent > Inbound Voice Agent" action** — explicitly using the Inbound Phone trigger against a real phone number.
+
+"Web Call" in HR's editor is the **Test button** that fires a browser audio session against a voice workflow. It's a *feature* of the editor, not a *trigger type*.
+
+### Why we can't use the docs' literal inbound recipe in this org
+
+`manage_sip_trunks list` returns:
+
+```
+Onboarding — +16282142490
+  Inbound Trunk: none
+  Outbound Trunk: ST_zwHRAznmMNk5
+```
+
+The org's only phone number has **no inbound trunk** — it's outbound-only. Pointing an `Inbound to number` trigger at it returns `Dispatch rules conflict for numbers +16282142490` on publish (the platform refusing to wire an inbound trigger to an outbound-only number). The spec explicitly forbids buying a new (inbound-capable) phone number.
+
+### The pattern that actually satisfies the spec
+
+**Predefined Webhook trigger + Outbound Voice Agent** with `from_number` set to the org's outbound-capable Onboarding number. HR's pre-built **"Voice Agent" template** ships with this exact pattern. The editor's Test/Web Call button substitutes a browser audio session for the outbound dial — Riley has a real two-way audio stream, no PSTN call, no phone purchase, no inbound trunk needed.
+
+This *is* the "web call trigger feature" the challenge describes — operationally and as a tested-end-to-end shape.
 
 ## Critical: which voice agent event to use
 
