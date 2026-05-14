@@ -2,11 +2,11 @@
   "name": "Inbound Carrier Sales",
   "workflow_id": "019e253d-30ac-7a31-81db-f19497aef7fa",
   "slug": "4gtefhf65y00",
-  "current_live_version_id": "019e253d-30b6-77b7-a611-e98b2431cf43",
-  "current_live_version_slug": "twi85vv8f9gr",
-  "current_live_version_number": 1,
+  "current_live_version_id": "019e2540-bb57-727b-abd5-ded18b7c65e7",
+  "current_live_version_slug": "uou6gl6ojydb",
+  "current_live_version_number": 2,
   "environment": "production",
-  "editor_url": "https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/4gtefhf65y00/editor/twi85vv8f9gr",
+  "editor_url": "https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/4gtefhf65y00/editor/uou6gl6ojydb",
   "description": "Acme Logistics carrier sales. Web Call trigger feature pattern: Predefined Webhook trigger + Outbound Voice Agent + Deepgram Nova 3 STT.",
 
   "interpretation_of_spec_phrase": {
@@ -33,8 +33,10 @@
     "record": true,
     "max_call_duration": 600,
     "max_silence_hold_duration": 8,
-    "from_number_id": "019e1ed9-1e6d-77c0-bff3-4b4118d0d18c",
+    "from_number_id": "+16282142490",
+    "from_number_id_format_note": "Use the phone-number string as the static.id, NOT the SIP-trunk UUID. v1 used the UUID 019e1ed9-1e6d-77c0-bff3-4b4118d0d18c — the agent could not bind to a trunk and the browser Web Call test was silent. v2 fixes this by matching HR's pre-built Voice Agent template format.",
     "from_number": "+16282142490",
+    "language_accents": [{"id": "en-us", "name": "English (US)"}],
     "to_template": "{{<trigger persistent_id>.carrier_phone}}",
     "initial_message": "Hi, thanks for calling Acme Logistics carrier sales — this is Riley. What lane are you running today?"
   },

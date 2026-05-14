@@ -9,7 +9,7 @@ The Inbound Carrier Sales workflow is **defined as code** under this directory:
 
 The live workflow currently runs at:
 
-> **https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/4gtefhf65y00/editor/twi85vv8f9gr**
+> **https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/4gtefhf65y00/editor/uou6gl6ojydb**
 
 ## How the workflow was built
 
@@ -121,6 +121,21 @@ For HappyRobot's **Web Call Test** flow (browser-initiated test calls from the e
 - The editor's Test button replaces the actual outbound dial with a browser audio session. Riley speaks, hears, and the tool flow runs.
 
 Using the **Inbound** Voice Agent in a webhook-triggered workflow looks plausible (agent boots, validates) but ends in silence on the browser test — there's no inbound audio path because the Predefined Webhook trigger isn't a call source. Trying to fix that by swapping the trigger to **Inbound Phone** (`0192a20c-...`) ran into dispatch-rule conflicts on first publish that need HR support to clear (see the `Dispatch claim stickiness` gotcha below).
+
+## Outbound Voice Agent `from_number` ID format (silent-call gotcha)
+
+The `from_number.static.id` field on the Outbound Voice Agent must be the **phone number string** (`"+16282142490"`), **NOT** the phone-number UUID (`"019e1ed9-1e6d-77c0-bff3-4b4118d0d18c"`). Both `manage_phone_numbers list` and `get_node_config_schema` return the UUID in their "Phone Numbers" enum — using that UUID looks plausible and passes validation on create + publish, but the agent then can't bind to a SIP trunk at run time and the browser Web Call test is **completely silent** (no Riley audio).
+
+HR's pre-built Voice Agent template uses the phone-number string format. Match it exactly:
+
+```json
+"from_number": {
+  "type": "static",
+  "static": { "id": "+16282142490", "name": "+16282142490" }
+}
+```
+
+Hit this once, debug took an hour. v1 of `019e253d-...` was published, validated, "live", and silent. v2 (`019e2540-bb57-727b-abd5-ded18b7c65e7`) flips the id to the phone-number string + adds `agent.language_accents = [{type:"static", static:{id:"en-us", name:"English (US)"}}]` to match HR's template structure.
 
 ## Gotchas surfaced during build
 
