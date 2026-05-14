@@ -2,45 +2,62 @@
   "name": "Inbound Carrier Sales",
   "workflow_id": "019e1f1e-9371-7515-82ad-ce15cd66418d",
   "slug": "l52g564dq2gf",
-  "version_id": "019e1f1e-937d-790c-af26-12f2de41f33b",
-  "version_slug": "tjkjsddmtzio",
-  "version_number": 1,
-  "live": true,
+  "current_live_version_id": "019e2484-8bc4-70e0-b69c-9afb3cb536d0",
+  "current_live_version_slug": "ef75jglyg906",
+  "current_live_version_number": 3,
   "environment": "production",
-  "editor_url": "https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/l52g564dq2gf/editor/tjkjsddmtzio",
+  "editor_url": "https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/l52g564dq2gf/editor/ef75jglyg906",
   "description": "Acme Logistics inbound carrier sales: FMCSA vet, load match, 3-round negotiation, mock transfer.",
+
   "agent": {
     "name": "Riley",
+    "persistent_id": "019e1f1e-93bd-7c8c-9b20-1697eeaf1e52",
+    "root_prompt_persistent_id": "019e1f1e-93bd-7c8c-9b20-169887ee266a",
+    "model_id": "gpt-5.1-instant",
     "voice_id": "qpwlpzgt2xxw",
     "voice_name": "Jenna - Clear, Engaging and Warm",
     "language": "en",
-    "model_id": "gpt-5.1-instant",
+    "transcriber_id": "deepgram-nova-3-multi",
+    "transcriber_name": "Deepgram Nova 3 Multilingual",
+    "enable_denoised_stt": true,
+    "real_time_sentiment_classifier": true,
+    "record": true,
+    "max_call_duration": 600,
+    "max_silence_hold_duration": 8,
     "initial_message": "Hi, thanks for calling Acme Logistics carrier sales — this is Riley. What lane are you running today?"
   },
+
   "trigger": {
     "type": "webhook_predefined",
     "event_id": "b329e750-2e0e-4618-ba65-e04bb6a93c5f",
     "persistent_id": "019e1f1e-9398-7c28-8f43-ad80e342a461",
     "params": ["call_id", "carrier_phone", "room_name"]
   },
+
   "tools": [
     {
       "name": "verify_carrier",
       "persistent_id": "019e1f1e-93d7-7b2d-873c-9c09dd090fe2",
       "webhook_persistent_id": "019e1f1e-93e0-7d95-a985-cd312ebe1028",
-      "endpoint": "/api/v1/carrier/verify"
+      "endpoint": "/api/v1/carrier/verify",
+      "body_mode": "builder",
+      "body_data_keys": ["mc"]
     },
     {
       "name": "search_loads",
       "persistent_id": "019e1f1e-93f0-71d3-991e-0a69881246bf",
       "webhook_persistent_id": "019e1f1e-93f9-706e-98ee-13e8a0e01d3c",
-      "endpoint": "/api/v1/loads/search"
+      "endpoint": "/api/v1/loads/search",
+      "body_mode": "builder",
+      "body_data_keys": ["origin", "destination", "equipment_type", "pickup_date"]
     },
     {
       "name": "submit_offer",
       "persistent_id": "019e1f1e-9409-7423-827a-c2a6a203c46c",
       "webhook_persistent_id": "019e1f1e-9412-7cff-9b4c-0170f034d5b1",
-      "endpoint": "/api/v1/negotiate"
+      "endpoint": "/api/v1/negotiate",
+      "body_mode": "raw",
+      "body_data_keys": ["load_id", "loadboard_rate", "round", "agent_last_offer", "carrier_offer", "carrier_sentiment", "origin", "destination"]
     },
     {
       "name": "transfer_call",
@@ -49,11 +66,16 @@
       "endpoint": null
     }
   ],
+
   "post_call": {
     "ai_extract_persistent_id": "019e1f1e-943a-7804-9a97-6fe876e3bfe7",
     "log_webhook_persistent_id": "019e1f1e-944e-7d31-a27a-7da219390c1e",
     "log_endpoint": "/api/v1/calls/log"
   },
-  "api_base_url_placeholder": "https://inbound-carrier-sales-api.fly.dev",
-  "api_key_placeholder": "devkey-please-change"
+
+  "version_history": [
+    {"version": 1, "version_id": "019e1f1e-937d-790c-af26-12f2de41f33b", "note": "Initial create_workflow via MCP; webhook URLs/keys placeholder."},
+    {"version": 2, "version_id": "019e2088-a90a-7c2d-a22a-1a3902c243a4", "note": "Webhook X-API-Key headers updated to deployed API_KEY."},
+    {"version": 3, "version_id": "019e2484-8bc4-70e0-b69c-9afb3cb536d0", "note": "Added transcriber (Deepgram Nova 3 Multilingual), enable_denoised_stt, and freight keyterms so the agent can hear the carrier on a web call."}
+  ]
 }

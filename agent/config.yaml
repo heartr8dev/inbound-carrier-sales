@@ -2,13 +2,46 @@ name: "Inbound Carrier Sales"
 agent_name: "Riley"
 description: "Inbound voice agent that vets carriers via FMCSA, matches loads, negotiates pricing (≤3 rounds), and mocks transfer to a sales rep on close."
 
-# Picked from get_node_config_schema enum (Inbound Voice Agent)
+# LLM + voice (from get_node_config_schema enum on the Inbound Voice Agent event)
 model_id: "gpt-5.1-instant"             # Low-latency conversational GPT-5 family
-voice_ids:
-  - "qpwlpzgt2xxw"                       # Jenna - Clear, Engaging and Warm [en-US, female]
+voices:
+  - id: "qpwlpzgt2xxw"                  # Jenna - Clear, Engaging and Warm [en-US, female]
+    name: "Jenna - Clear, Engaging and Warm"
 languages:
-  - "en"
+  - id: "en"
+    name: "English"
 multi_lingual: false
+
+# Speech-to-text — REQUIRED for the agent to hear the carrier on a web call.
+# An Inbound Voice Agent created without `transcriber` will speak (TTS works)
+# but never react to what the caller says.
+transcriber:
+  id: "deepgram-nova-3-multi"
+  name: "Deepgram Nova 3 Multilingual"
+enable_denoised_stt: true
+# Domain-specific terms the transcriber should be biased toward.
+keyterms:
+  - "MC number"
+  - "MC"
+  - "dry van"
+  - "reefer"
+  - "flatbed"
+  - "step deck"
+  - "power only"
+  - "loadboard"
+  - "rate confirmation"
+  - "lane"
+  - "Dallas"
+  - "Atlanta"
+  - "Chicago"
+  - "Memphis"
+  - "Nashville"
+  - "Houston"
+  - "Phoenix"
+  - "Sacramento"
+  - "Tampa"
+  - "Acme Logistics"
+  - "Riley"
 
 # Behavior knobs
 record: true

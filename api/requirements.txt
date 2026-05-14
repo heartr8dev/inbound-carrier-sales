@@ -8,6 +8,7 @@ alembic==1.14.0
 loguru==0.7.3
 httpx==0.28.1
 requests==2.32.3
+pyyaml==6.0.2
 python-multipart==0.0.20
 greenlet==3.1.1
 psycopg2-binary==2.9.10
