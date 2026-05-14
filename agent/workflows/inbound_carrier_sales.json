@@ -2,11 +2,11 @@
   "name": "Inbound Carrier Sales",
   "workflow_id": "019e253d-30ac-7a31-81db-f19497aef7fa",
   "slug": "4gtefhf65y00",
-  "current_live_version_id": "019e2540-bb57-727b-abd5-ded18b7c65e7",
-  "current_live_version_slug": "uou6gl6ojydb",
-  "current_live_version_number": 2,
+  "current_live_version_id": "019e2546-9da9-762d-a153-ba5a357712cc",
+  "current_live_version_slug": "pm2ngj57abwl",
+  "current_live_version_number": 3,
   "environment": "production",
-  "editor_url": "https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/4gtefhf65y00/editor/uou6gl6ojydb",
+  "editor_url": "https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/4gtefhf65y00/editor/pm2ngj57abwl",
   "description": "Acme Logistics carrier sales. Web Call trigger feature pattern: Predefined Webhook trigger + Outbound Voice Agent + Deepgram Nova 3 STT.",
 
   "interpretation_of_spec_phrase": {
@@ -37,7 +37,8 @@
     "from_number_id_format_note": "Use the phone-number string as the static.id, NOT the SIP-trunk UUID. v1 used the UUID 019e1ed9-1e6d-77c0-bff3-4b4118d0d18c — the agent could not bind to a trunk and the browser Web Call test was silent. v2 fixes this by matching HR's pre-built Voice Agent template format.",
     "from_number": "+16282142490",
     "language_accents": [{"id": "en-us", "name": "English (US)"}],
-    "to_template": "{{<trigger persistent_id>.carrier_phone}}",
+    "to_value": "+15555550100",
+    "to_value_note": "Hardcoded to an RFC 7042 reserved test number. In v2 we referenced {{trigger.carrier_phone}} — but the Web Call test fires the trigger WITHOUT injecting any phone, so `to` resolved to empty/invalid. The Outbound Voice Agent ran an E.164 precheck and failed with 'invalid outbound phone number: 2' before producing any TTS, hence dead silence. monitor_runs surfaced this; runs e3a24443, 01a66f14, 3c36bc67 all failed with the same error. Hardcoding `to` to a valid placeholder E.164 lets the agent boot; the Web Call test substitutes browser audio for the actual dial so this number never routes anywhere real.",
     "initial_message": "Hi, thanks for calling Acme Logistics carrier sales — this is Riley. What lane are you running today?"
   },
 

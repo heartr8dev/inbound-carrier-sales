@@ -9,7 +9,7 @@ The Inbound Carrier Sales workflow is **defined as code** under this directory:
 
 The live workflow currently runs at:
 
-> **https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/4gtefhf65y00/editor/uou6gl6ojydb**
+> **https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/4gtefhf65y00/editor/pm2ngj57abwl**
 
 ## How the workflow was built
 
@@ -122,6 +122,29 @@ For HappyRobot's **Web Call Test** flow (browser-initiated test calls from the e
 
 Using the **Inbound** Voice Agent in a webhook-triggered workflow looks plausible (agent boots, validates) but ends in silence on the browser test — there's no inbound audio path because the Predefined Webhook trigger isn't a call source. Trying to fix that by swapping the trigger to **Inbound Phone** (`0192a20c-...`) ran into dispatch-rule conflicts on first publish that need HR support to clear (see the `Dispatch claim stickiness` gotcha below).
 
+## Outbound Voice Agent `to` field — must be a valid E.164, NOT a trigger variable
+
+When using the Outbound Voice Agent for Web Call testing, `to` looks like a variable reference makes sense (`{{trigger.carrier_phone}}`). It doesn't. HR's editor Web Call test button fires the trigger **without injecting any value into the trigger's params** — so the variable resolves to empty, the agent runs an E.164 validation precheck on `to`, fails with `invalid phone number: 2: invalid outbound phone number`, and dies before producing any TTS audio. From the carrier's side: dead silence on the Web Call.
+
+`monitor_runs` is how you find this:
+
+```
+mcp__happyrobot-workflows__monitor_runs action=list workflow_id=<id>
+→ Run e3a24443 status=failed
+mcp__happyrobot-workflows__monitor_runs action=outputs run_id=<run_id>
+→ Riley — Carrier Sales: status=failed, error=invalid phone number: 2: invalid outbound phone number
+```
+
+Fix: **hardcode** `to` to any valid E.164 number. The Web Call test substitutes a browser audio session for the actual dial-out, so the number never routes anywhere real. Use a reserved-for-testing number to be safe:
+
+```json
+"to": [{"type": "paragraph", "children": [{"text": "+15555550100"}]}]
+```
+
+(`+1 555 555 0100` is in the [RFC 7042](https://datatracker.ietf.org/doc/html/rfc7042) 555-0100 block — guaranteed never to dial a real subscriber.)
+
+If you later wire this workflow up to a REAL outbound dial (e.g. inbound carrier leaves a callback), swap the static value back to a trigger variable reference.
+
 ## Outbound Voice Agent `from_number` ID format (silent-call gotcha)
 
 The `from_number.static.id` field on the Outbound Voice Agent must be the **phone number string** (`"+16282142490"`), **NOT** the phone-number UUID (`"019e1ed9-1e6d-77c0-bff3-4b4118d0d18c"`). Both `manage_phone_numbers list` and `get_node_config_schema` return the UUID in their "Phone Numbers" enum — using that UUID looks plausible and passes validation on create + publish, but the agent then can't bind to a SIP trunk at run time and the browser Web Call test is **completely silent** (no Riley audio).
@@ -159,3 +182,59 @@ Hit this once, debug took an hour. v1 of `019e253d-...` was published, validated
 | Provisioning recipe & MCP commands | This file |
 
 If you change any of the above, also update `workflows/inbound_carrier_sales.json` so the snapshot reflects the live state.
+
+## Quality features (north stars + custom evals + adversarial)
+
+HappyRobot exposes three scoring/eval primitives that grade an agent against ground-truth criteria. They're all set up programmatically for Riley:
+
+### Northstars
+
+AI-generated quality criteria attached to the agent's root prompt. 14 total across 4 categories:
+
+- **6 notes** — MC validation, eligibility response logic, rate floor + 3-round cap, edge-case handling (rude/off-topic/"are you an AI"), conversation sequencing.
+- **3 style** — warm/energetic/concise tone, freight lingo usage, natural number speech ("twenty-eight hundred" not "$2,800.00").
+- **4 tool** — invocation rules for verify_carrier / search_loads / submit_offer / transfer_call.
+- **3 sequential** — eligibility before lane discovery, load presentation before negotiation, etc.
+
+```
+mcp__happyrobot-workflows__manage_northstars action=list node_id=<root prompt persistent_id>
+```
+
+### Custom evals (4)
+
+Structured test scenarios with expected responses or tool-call shapes:
+
+| Eval | Mode | Probes |
+|---|---|---|
+| Happy path — MC collection triggers verify_carrier | custom | Tool gating on MC collection |
+| Lane discovery — search_loads only after all 4 fields | custom | Tool gating on (origin, destination, equipment, pickup) |
+| Negotiation — hard cap at 3 rounds | northstar | Floor + round-cap enforcement |
+| "Is this an AI?" — canonical response | custom | Verbatim edge-case response |
+
+### Adversarial tests (4)
+
+Claude-Sonnet-4.6 plays a hostile carrier; Riley's responses are graded against the relevant northstars:
+
+| Test | Probes |
+|---|---|
+| Round-cap respect — 5+ counter-offers | 3-round hard cap, floor enforcement |
+| MC refusal — demands rate before identifying | Sequencing: verify before pitch |
+| Rudeness — profanity escalation | One-warning-then-end behavior |
+| Skip-verification request | Verify-tool mandatory regardless of carrier claim |
+
+### Running them
+
+```
+# Run all 4 custom evals
+for id in <eval ids>; do mcp__happyrobot-workflows__manage_custom_evals action=run eval_id=$id version_id=<live>; done
+
+# Run a single adversarial test
+mcp__happyrobot-workflows__manage_adversarial_tests action=run test_id=<id> version_id=<live>
+
+# Inspect a failed adversarial run for per-northstar audit remarks
+mcp__happyrobot-workflows__manage_adversarial_tests action=get_run run_id=<run_id>
+```
+
+### Known MCP wrapper bug
+
+`manage_adversarial_suites action=generate` sends a `null` body and 400s. Workaround: create standalone adversarial tests directly via `manage_adversarial_tests action=create` (used above).
