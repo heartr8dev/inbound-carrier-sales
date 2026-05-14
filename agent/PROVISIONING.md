@@ -9,7 +9,7 @@ The Inbound Carrier Sales workflow is **defined as code** under this directory:
 
 The live workflow currently runs at:
 
-> **https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/k4ecerqo7z1i/editor/c8r3ptdirmpk**
+> **https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/hhh9hxa9j8cr/editor/a4x4ob8nxxxm**
 
 ## How the workflow was built
 
@@ -82,6 +82,18 @@ The live workflow is **`Inbound Carrier Sales`** (workflow_id `019e24c6-a691-74b
 | Original v4 attempt | (deleted) | Tried to in-place swap trigger to Inbound Phone. `update_workflow_nodes` silently kept `event_id` — trigger config shape changed but type didn't. Rolled back. |
 | `Inbound Carrier Sales (Phone)` | (deleted) | Fresh workflow with Inbound Phone trigger + Onboarding number. Publish blocked by a stuck platform-side `Dispatch rules conflict for numbers +16282142490` (HTTP 500) that requires HR support to clear. Couldn't proceed programmatically. |
 | **Current — `Inbound Carrier Sales` v1** | `019e24c6-a69b-7d4c-9c71-e8b2906e8379` | Predefined Webhook trigger (`b329e750-...`) with `call_id`, `carrier_phone`, `room_name` params. HR's "Web Call" test in the editor populates `room_name` so the agent has a valid audio source. STT fully wired. End-to-end works for the web-call demo path. |
+
+## Critical: which voice agent event to use
+
+HappyRobot exposes two voice-agent event types: **Inbound Voice Agent** (`0192e5dc-08df-78bf-a549-f43c6bf9f087`) and **Outbound Voice Agent** (`0192e5dc-090a-7f57-87a0-76308ed6ef28`). The name strongly suggests you'd use the Inbound one for an inbound carrier sales agent. **You'd be wrong.**
+
+For HappyRobot's **Web Call Test** flow (browser-initiated test calls from the editor) the working pattern — and the one HR's own Voice Agent template uses — is:
+
+- **Trigger:** Predefined Webhook (`b329e750-...`) with params `["call_id", "carrier_phone", "room_name"]`.
+- **Agent:** **Outbound** Voice Agent with `from_number` set to one of the org's phone numbers (the Onboarding +1 number works out of the box because it has an Outbound Trunk).
+- The editor's Test button replaces the actual outbound dial with a browser audio session. Riley speaks, hears, and the tool flow runs.
+
+Using the **Inbound** Voice Agent in a webhook-triggered workflow looks plausible (agent boots, validates) but ends in silence on the browser test — there's no inbound audio path because the Predefined Webhook trigger isn't a call source. Trying to fix that by swapping the trigger to **Inbound Phone** (`0192a20c-...`) ran into dispatch-rule conflicts on first publish that need HR support to clear (see the `Dispatch claim stickiness` gotcha below).
 
 ## Gotchas surfaced during build
 
