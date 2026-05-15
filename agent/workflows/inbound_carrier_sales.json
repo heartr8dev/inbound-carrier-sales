@@ -1,31 +1,32 @@
 {
   "name": "Inbound Carrier Sales",
-  "workflow_id": "019e253d-30ac-7a31-81db-f19497aef7fa",
-  "slug": "4gtefhf65y00",
-  "current_live_version_id": "019e2546-9da9-762d-a153-ba5a357712cc",
-  "current_live_version_slug": "pm2ngj57abwl",
-  "current_live_version_number": 3,
+  "workflow_id": "019e29c8-f3a7-7a7c-b7f8-404f9ab6a8f5",
+  "slug": "avu4wpit44bg",
+  "current_live_version_id": "019e29c8-f3af-7641-8d9c-048a176767d7",
+  "current_live_version_slug": "ihaast3ecgnc",
+  "current_live_version_number": 1,
   "environment": "production",
-  "editor_url": "https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/4gtefhf65y00/editor/pm2ngj57abwl",
-  "description": "Acme Logistics carrier sales. Web Call trigger feature pattern: Predefined Webhook trigger + Outbound Voice Agent + Deepgram Nova 3 STT.",
+  "editor_url": "https://platform.happyrobot.ai/fdeharrysoiland/workflow/avu4wpit44bg/editor/ihaast3ecgnc",
+  "description": "Acme Logistics inbound carrier sales — Inbound Voice Agent + Predefined Webhook trigger (Web Call test pattern, no phone numbers).",
 
-  "interpretation_of_spec_phrase": {
-    "spec": "Use the web call trigger feature.",
-    "finding": "HappyRobot does not expose a separate 'Web Call' trigger event_id. Confirmed by grepping the org's full integration dump for /web.?call|browser.?call|test.?call/ — zero hits across 4,399 lines. 'Web Call' is the editor's Test button (browser audio session), not a node type.",
-    "docs_recipe": "https://docs.happyrobot.ai/details/phone_calling documents the inbound recipe as 'Phone calls > Inbound to number' trigger + 'AI Agent > Inbound Voice Agent' action. That requires a phone number with an inbound SIP trunk.",
-    "org_constraint": "The org has exactly one phone number — Onboarding +16282142490 (id 019e1ed9-1e6d-77c0-bff3-4b4118d0d18c). `manage_sip_trunks list` confirms `Inbound Trunk: none` — the number is outbound-only. Trying to publish a workflow with the Inbound Phone trigger pointing at this number returns 'Dispatch rules conflict for numbers +16282142490' (HTTP 500). The spec explicitly forbids buying a new (inbound-capable) phone number.",
-    "chosen_pattern": "Predefined Webhook trigger + Outbound Voice Agent + from_number=Onboarding. Matches HR's pre-built 'Voice Agent' template structure. HR's editor 'Test/Web Call' button substitutes a browser audio session for the outbound dial, giving the agent a real two-way audio stream without a PSTN call. This IS the 'web call trigger feature' described in the spec — operationally."
+  "spec_alignment": {
+    "spec": "Do not buy a phone number on the platform. Use the web call trigger feature.",
+    "shape": "Inbound Voice Agent (event 0192e5dc-08df-78bf-a549-f43c6bf9f087) + Predefined Webhook trigger (event b329e750-...). No `to`, no `from_number`, no SIP-trunk routability check. The agent's `call` field references the trigger node — HR's editor 'Web Call' button creates a browser audio session bound to that trigger; the Inbound Voice Agent picks up the room and runs.",
+    "why_not_outbound": "Earlier we tried Outbound Voice Agent (matching HR's pre-built Voice Agent template) but it requires `to` + `from_number`. The trunk's outbound precheck rejected RFC 7042 test numbers as 'invalid outbound phone number' (run c10abc6b), and the org has no inbound SIP trunk on the only phone number anyway. Inbound Voice Agent has no such precheck.",
+    "why_not_inbound_phone_trigger": "Inbound to number trigger (event 0192a20c-cb70-7bf2-977a-b7edc14dcd66) requires a phone number with an inbound SIP trunk. The org's only number — Onboarding +16282142490 — has `Inbound Trunk: none`. Spec forbids buying a new number."
   },
 
   "agent": {
     "name": "Riley",
-    "kind": "outbound_voice",
-    "persistent_id": "019e253d-30e2-7cab-8154-c5dfc4b8bca2",
-    "root_prompt_persistent_id": "019e253d-30e2-7cab-8154-c5e099f3e19c",
+    "kind": "inbound_voice",
+    "event_id": "0192e5dc-08df-78bf-a549-f43c6bf9f087",
+    "persistent_id": "019e29c8-f3d1-7a19-9a1f-970ddcc81768",
+    "root_prompt_persistent_id": "019e29c8-f3d1-7a19-9a1f-970e571e3a94",
     "model_id": "gpt-5.1-instant",
     "voice_id": "qpwlpzgt2xxw",
     "voice_name": "Jenna - Clear, Engaging and Warm",
     "language": "en",
+    "language_accent": "en-us",
     "transcriber_id": "deepgram-nova-3-multi",
     "transcriber_name": "Deepgram Nova 3 Multilingual",
     "enable_denoised_stt": true,
@@ -33,58 +34,52 @@
     "record": true,
     "max_call_duration": 600,
     "max_silence_hold_duration": 8,
-    "from_number_id": "+16282142490",
-    "from_number_id_format_note": "Use the phone-number string as the static.id, NOT the SIP-trunk UUID. v1 used the UUID 019e1ed9-1e6d-77c0-bff3-4b4118d0d18c — the agent could not bind to a trunk and the browser Web Call test was silent. v2 fixes this by matching HR's pre-built Voice Agent template format.",
-    "from_number": "+16282142490",
-    "language_accents": [{"id": "en-us", "name": "English (US)"}],
-    "to_value": "+15555550100",
-    "to_value_note": "Hardcoded to an RFC 7042 reserved test number. In v2 we referenced {{trigger.carrier_phone}} — but the Web Call test fires the trigger WITHOUT injecting any phone, so `to` resolved to empty/invalid. The Outbound Voice Agent ran an E.164 precheck and failed with 'invalid outbound phone number: 2' before producing any TTS, hence dead silence. monitor_runs surfaced this; runs e3a24443, 01a66f14, 3c36bc67 all failed with the same error. Hardcoding `to` to a valid placeholder E.164 lets the agent boot; the Web Call test substitutes browser audio for the actual dial so this number never routes anywhere real.",
     "initial_message": "Hi, thanks for calling Acme Logistics carrier sales — this is Riley. What lane are you running today?"
   },
 
   "trigger": {
     "type": "webhook_predefined",
     "event_id": "b329e750-2e0e-4618-ba65-e04bb6a93c5f",
-    "persistent_id": "019e253d-30cf-73c5-8d65-7699b2e1fd42",
+    "persistent_id": "019e29c8-f3c5-7bfa-83a4-8e3861c32ad8",
     "params": ["call_id", "carrier_phone", "room_name"]
   },
 
   "tools": [
     {
       "name": "verify_carrier",
-      "persistent_id": "019e253d-30f5-7b46-8ffb-19f4c0626c7c",
-      "webhook_persistent_id": "019e253d-30fc-7257-b82a-d6fcd91a5550",
+      "persistent_id": "019e29c8-f3de-77d6-a1c9-66f991d68ee9",
+      "webhook_persistent_id": "019e29c8-f3e4-7943-a800-49c07467422f",
       "endpoint": "/api/v1/carrier/verify",
       "body_mode": "builder",
       "body_data_keys": ["mc"]
     },
     {
       "name": "search_loads",
-      "persistent_id": "019e253d-310b-7026-9cbc-fc8b245b76bd",
-      "webhook_persistent_id": "019e253d-3112-71e3-9673-860f7f5b34dc",
+      "persistent_id": "019e29c8-f3eb-7e9c-9826-a71107eccbf9",
+      "webhook_persistent_id": "019e29c8-f3f2-7889-883f-f7d62e28aaca",
       "endpoint": "/api/v1/loads/search",
       "body_mode": "builder",
       "body_data_keys": ["origin", "destination", "equipment_type", "pickup_date"]
     },
     {
       "name": "submit_offer",
-      "persistent_id": "019e253d-3120-7977-9fdb-428ff47e5a35",
-      "webhook_persistent_id": "019e253d-3127-74bb-92dd-8f7ebfd44285",
+      "persistent_id": "019e29c8-f3f9-78cd-92f7-f5e1502eb6d3",
+      "webhook_persistent_id": "019e29c8-f3fd-7b8c-810f-6dbba56d315a",
       "endpoint": "/api/v1/negotiate",
       "body_mode": "raw",
       "body_data_keys": ["load_id", "loadboard_rate", "round", "agent_last_offer", "carrier_offer", "carrier_sentiment", "origin", "destination"]
     },
     {
       "name": "transfer_call",
-      "persistent_id": "019e253d-3134-76e2-b016-629c299cf5a1",
-      "python_persistent_id": "019e253d-313c-7094-ad63-738968784d73",
+      "persistent_id": "019e29c8-f405-7c96-a610-7d85a530e868",
+      "python_persistent_id": "019e29c8-f409-7c3f-8925-9f29f443f190",
       "endpoint": null
     }
   ],
 
   "post_call": {
-    "ai_extract_persistent_id": "019e253d-314c-7a97-bb33-bf1f2b63fc6a",
-    "log_webhook_persistent_id": "019e253d-315b-748d-b4bd-a1017e07024c",
+    "ai_extract_persistent_id": "019e29c8-f411-7bdf-ae37-6bfedd58afd4",
+    "log_webhook_persistent_id": "019e29c8-f419-7af5-8c9d-f80bf397907e",
     "log_endpoint": "/api/v1/calls/log"
   }
 }

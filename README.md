@@ -162,7 +162,7 @@ flyctl ssh console --app inbound-carrier-sales-api \
     -C "sh -c 'cd /app && python scripts/generate_mock_calls.py --reset'"
 
 # Open the HappyRobot workflow editor and trigger a "Web Call" to actually talk to Riley
-open https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/4gtefhf65y00/editor/pm2ngj57abwl
+open https://platform.happyrobot.ai/fdeharrysoiland/workflow/avu4wpit44bg/editor/ihaast3ecgnc
 ```
 
 ### Teardown
@@ -181,7 +181,7 @@ python scripts/teardown_happyrobot.py --yes
 | Repo | https://github.com/heartr8dev/inbound-carrier-sales |
 | Deployed dashboard | https://inbound-carrier-sales-dashboard.fly.dev (after first deploy) |
 | Deployed API | https://inbound-carrier-sales-api.fly.dev (after first deploy) |
-| HappyRobot workflow editor | https://api.platform.happyrobot.ai/fdeharrysoiland/workflow/4gtefhf65y00/editor/pm2ngj57abwl |
+| HappyRobot workflow editor | https://platform.happyrobot.ai/fdeharrysoiland/workflow/avu4wpit44bg/editor/ihaast3ecgnc |
 | Live web call URL | Open the editor URL above → "Test" / "Web Call" button (HR provisions a session URL per call) |
 | 5-minute walkthrough video | `<TBD — run scripts/generate_video.py after recording the 3 screen captures>` |
 
