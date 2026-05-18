@@ -358,6 +358,9 @@ async def test_aggregator_returns_plausible_numbers_with_mock_data() -> None:
       - recent_calls capped at 25
       - kpi values are in their natural ranges
     """
+    # Pin --days-back=7 so every row lands in the 7d window we aggregate over.
+    # The generator's default of 90 days otherwise spreads 80 rows across
+    # three months and only ~6 fall inside the 7d window.
     script = REPO_ROOT / "scripts" / "generate_mock_calls.py"
     proc = await asyncio.create_subprocess_exec(
         sys.executable,
@@ -365,6 +368,8 @@ async def test_aggregator_returns_plausible_numbers_with_mock_data() -> None:
         "--reset",
         "--count",
         "80",
+        "--days-back",
+        "7",
         "--seed",
         "42",
         stdout=subprocess.PIPE,
