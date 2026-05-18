@@ -1,4 +1,4 @@
-"""Insert 250 mock CallLog rows spread over the past 7 days.
+"""Insert mock CallLog rows spread over a configurable historical window.
 
 Used to populate the dashboard with plausible-looking traffic when no real
 calls have flowed yet. Outcome weights mirror what a healthy inbound-sales
@@ -6,11 +6,17 @@ operation might produce; sentiment is conditionally sampled given the outcome
 so the heatmap actually correlates (happy carriers tend to book, frustrated
 ones tend to walk).
 
+Defaults are tuned so the dashboard's four period pills (Today/7d/30d/All)
+all show meaningful traffic: 3000 rows across 90 days is ~33 calls/day —
+plenty for the 7d funnel to look populated and the 30d/All view to show
+real depth, while still leaving plenty of room in business hours.
+
 Usage::
 
-    python scripts/generate_mock_calls.py            # append 250 rows
-    python scripts/generate_mock_calls.py --reset    # truncate first
-    python scripts/generate_mock_calls.py --count 50 # custom count
+    python scripts/generate_mock_calls.py                          # 3000 rows × 90 days (default)
+    python scripts/generate_mock_calls.py --reset                  # truncate first
+    python scripts/generate_mock_calls.py --count 250 --days-back 7   # the original demo profile
+    python scripts/generate_mock_calls.py --count 10000 --days-back 180  # half-year archive
 """
 
 from __future__ import annotations
@@ -174,7 +180,7 @@ def _negotiation_rounds(rng: random.Random, outcome: CallOutcome) -> int:
 
 
 def _build_row(
-    rng: random.Random, loads: list[dict[str, Any]]
+    rng: random.Random, loads: list[dict[str, Any]], days_back: int = 7
 ) -> dict[str, Any]:
     outcome: CallOutcome = _pick_weighted(rng, OUTCOME_WEIGHTS)
     sentiment: CarrierSentiment = _pick_weighted(rng, SENTIMENT_BY_OUTCOME[outcome])
@@ -213,7 +219,7 @@ def _build_row(
     }
     transcript_summary = summary_map[outcome]
 
-    created_at = _sample_created_at(rng, days_back=7)
+    created_at = _sample_created_at(rng, days_back=days_back)
 
     return {
         "call_id": _random_call_id(rng),
@@ -268,7 +274,7 @@ async def _load_lanes(session) -> list[dict[str, Any]]:
     return json.loads(SEED_PATH.read_text())
 
 
-async def generate(count: int, reset: bool, seed: int | None) -> int:
+async def generate(count: int, reset: bool, seed: int | None, days_back: int) -> int:
     rng = random.Random(seed)
     async with AsyncSessionLocal() as session:
         if reset:
@@ -280,21 +286,39 @@ async def generate(count: int, reset: bool, seed: int | None) -> int:
             print("ERROR: no loads available (seed the loads table first)", file=sys.stderr)
             return 0
 
-        rows = [CallLog(**_build_row(rng, loads)) for _ in range(count)]
-        session.add_all(rows)
-        await session.commit()
-        return len(rows)
+        # Batch the insert so a 10K seed doesn't hold the whole row set in
+        # one transaction stream.
+        BATCH = 500
+        inserted = 0
+        for batch_start in range(0, count, BATCH):
+            batch_n = min(BATCH, count - batch_start)
+            rows = [
+                CallLog(**_build_row(rng, loads, days_back=days_back))
+                for _ in range(batch_n)
+            ]
+            session.add_all(rows)
+            await session.commit()
+            inserted += batch_n
+        return inserted
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate mock CallLog rows for the dashboard.")
-    parser.add_argument("--count", type=int, default=250, help="number of rows to insert (default 250)")
+    parser.add_argument("--count", type=int, default=3000, help="number of rows to insert (default 3000)")
+    parser.add_argument("--days-back", type=int, default=90, help="historical window in days (default 90)")
     parser.add_argument("--reset", action="store_true", help="truncate call_logs before inserting")
     parser.add_argument("--seed", type=int, default=None, help="RNG seed for deterministic runs")
     args = parser.parse_args()
 
-    inserted = asyncio.run(generate(count=args.count, reset=args.reset, seed=args.seed))
-    print(f"call_logs inserted: {inserted}")
+    inserted = asyncio.run(
+        generate(
+            count=args.count,
+            reset=args.reset,
+            seed=args.seed,
+            days_back=args.days_back,
+        )
+    )
+    print(f"call_logs inserted: {inserted} over {args.days_back} days")
     return 0
 
 
