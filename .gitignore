@@ -1,5 +1,6 @@
 .env
 .env.local
+.claude/
 *.pyc
 __pycache__/
 *.egg-info/
@@ -11,6 +12,7 @@ htmlcov/
 node_modules/
 dashboard/dist/
 dashboard/.vite/
+dashboard/tsconfig.tsbuildinfo
 video/output/
 video/cache/
 video/segments/

@@ -64,6 +64,20 @@ Live versions are **locked**. To make changes you must fork → edit → publish
 4. `manage_versions action=publish environment=production force=true` — the `force=true` automatically unpublishes the prior live version.
 5. Update `workflows/inbound_carrier_sales.json` so `current_live_version_id` reflects the new version and append a `version_history` entry.
 
+### Gotcha: `Prompt` node updates use `prompt_md` at the top level, not `config.prompt`
+
+For the standalone **Prompt** child node attached to the agent, `update_workflow_nodes` silently accepts `updates={"config": {"prompt": "..."}}` and returns success — but the prompt content is NEVER changed. The correct shape is:
+
+```
+action: update
+node_id: <prompt node id>
+updates: {"prompt_md": "# Riley — ...\n\n## Flow ..."}
+```
+
+The response will include `Updated fields: prompt_md, type` (the latter is the node type, always touched on update). Always re-fetch with `get_node_details` after every prompt edit to verify the content actually changed — the silent no-op cost us four version cycles (v6→v9) of misattributed eval failures before we caught it.
+
+Other prompt-node fields that follow the same top-level pattern: `initial_message`, `model`.
+
 ## Re-pointing webhook URLs after API redeploys
 
 If the deployed API URL or `API_KEY` rotates, the four webhook actions need to be updated. The standalone Python script [`scripts/setup_happyrobot.py`](../scripts/setup_happyrobot.py) is the long-running re-point tool. It currently targets the unauthenticated REST path used by the MCP server; if HR ever publishes the canonical REST surface, that script can call it directly. Until then, run the MCP version manually (the four `update_workflow_nodes` calls patching each webhook's `headers[].X-API-Key.value` and `url`).
