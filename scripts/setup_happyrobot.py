@@ -92,9 +92,13 @@ def main() -> int:
         return 2
 
     snapshot = json.loads(Path(args.snapshot).read_text())
-    version_id = snapshot["version_id"]
+    # The snapshot uses `current_live_version_*` (the live, published version).
+    # Older versions of this script used flat `version_id` / `version_number` —
+    # support both shapes so re-pointing works against either format.
+    version_id = snapshot.get("current_live_version_id") or snapshot["version_id"]
+    version_number = snapshot.get("current_live_version_number") or snapshot.get("version_number", "?")
     base = args.api_base_url.rstrip("/")
-    print(f"Repointing workflow '{snapshot['name']}' (version {snapshot['version_number']}) → {base}")
+    print(f"Repointing workflow '{snapshot['name']}' (version {version_number}) → {base}")
 
     for tool in snapshot["tools"]:
         if not tool.get("endpoint") or not tool.get("webhook_persistent_id"):
