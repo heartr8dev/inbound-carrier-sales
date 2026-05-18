@@ -82,3 +82,11 @@ export function formatDelta(
   const sign = pct > 0 ? "up" : "down";
   return { text: `${pct > 0 ? "+" : ""}${pct.toFixed(1)}%`, sign };
 }
+
+// Short aliases matching the design's helper names.
+export const fmtMoney = (n: number | string | null | undefined): string =>
+  "$" + Math.round(toNumber(n)).toLocaleString();
+export const fmtPct = (n: number | null | undefined, d = 1): string =>
+  n == null || !Number.isFinite(n) ? "—" : `${(n * 100).toFixed(d)}%`;
+export const fmtNum = (n: number | null | undefined): string =>
+  n == null ? "0" : n.toLocaleString();

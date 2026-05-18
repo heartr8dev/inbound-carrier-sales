@@ -1,291 +1,331 @@
 // Top-level layout for the Inbound Carrier Sales dashboard.
 //
-// Sections (top → bottom):
-//   1. Header bar (brand + live indicator + period selector)
-//   2. KPI bar (4 glass tiles with sparklines)
-//   3. Two-column grid: ConversionFunnel + RevenueStrip
-//      then TimeSeries + NegotiationAnalytics
-//   4. Two-column grid: VettingBreakdown + SentimentChart
-//   5. Full-width LoadMatching
-//   6. Full-width RecentCalls
+// Visual design: linen/obsidian neumorphic — see /tmp/acme-design/ for the
+// reference prototype and dashboard/src/styles/ for the ported tokens.
 //
-// The page is rendered once with a single <GradientDefs /> so every chart can
-// reference any of the named gradients by `url(#…)` without re-declaring them.
-import { useState } from "react";
+// Section order (matches the design's app.jsx):
+//   1. Header (brand + live pill + period pills)
+//   2. KPI strip (4 tiles with sparklines)
+//   3. Funnel + Revenue
+//   4. CallTimeline + NegotiationChart
+//   5. VettingCard + SentimentHeatmap
+//   6. Anomalies
+//   7. TopLanes + LaneFlow
+//   8. CallsTable
+//   9. CallDrawer (overlay)
+//   10. TweaksPanel (floating)
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { PeriodSelector } from "@/components/PeriodSelector";
-import { KpiBar } from "@/components/KpiBar";
-import { Card } from "@/components/Card";
-import { ConversionFunnel } from "@/components/ConversionFunnel";
-import { TimeSeries } from "@/components/TimeSeries";
-import { RevenueStrip } from "@/components/RevenueStrip";
-import { NegotiationAnalytics } from "@/components/NegotiationAnalytics";
-import { VettingBreakdown } from "@/components/VettingBreakdown";
-import { SentimentChart } from "@/components/SentimentChart";
-import { LoadMatching } from "@/components/LoadMatching";
-import { RecentCalls } from "@/components/RecentCalls";
-import { ChartSkeleton, Skeleton } from "@/components/Loading";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { Particles } from "@/components/Particles";
-import { LiveIndicator } from "@/components/LiveIndicator";
-import { LiveEventToast } from "@/components/LiveEventToast";
 import { useMetrics } from "@/hooks/useMetrics";
 import { useLiveEvents } from "@/hooks/useLiveEvents";
-import { GradientDefs } from "@/lib/gradients";
-import { TruckIcon } from "@/components/icons";
+import { useCalls } from "@/hooks/useCalls";
+import { useTweaks } from "@/hooks/useTweaks";
+import { BrandMark } from "@/components/BrandMark";
+import { KpiStrip } from "@/components/KpiStrip";
+import { Funnel } from "@/components/Funnel";
+import { Revenue } from "@/components/Revenue";
+import { CallTimeline } from "@/components/CallTimeline";
+import { NegotiationChart } from "@/components/NegotiationChart";
+import { VettingCard } from "@/components/VettingCard";
+import { SentimentHeatmap } from "@/components/SentimentHeatmap";
+import { Anomalies } from "@/components/Anomalies";
+import { TopLanes } from "@/components/TopLanes";
+import { LaneFlow } from "@/components/LaneFlow";
+import { CallsTable } from "@/components/CallsTable";
+import { CallDrawer } from "@/components/CallDrawer";
+import { TweaksPanel } from "@/components/TweaksPanel";
+import { toAggView } from "@/lib/agg";
 import type { components } from "@/types/api";
 
 type MetricsPeriod = components["schemas"]["MetricsResponse"]["period"];
+type Call = components["schemas"]["RecentCallItem"];
+
+const RANGE_OPTIONS: { label: string; value: MetricsPeriod }[] = [
+  { label: "Today", value: "today" },
+  { label: "7d", value: "7d" },
+  { label: "30d", value: "30d" },
+  { label: "All", value: "all" },
+];
+
+function ThemeToggle() {
+  const { tweaks, setTweak } = useTweaks();
+  const isDark = tweaks.theme === "dark";
+  return (
+    <button
+      type="button"
+      className="theme-toggle"
+      aria-label={isDark ? "Switch to Linen (light) theme" : "Switch to Obsidian (dark) theme"}
+      aria-pressed={isDark}
+      title={isDark ? "Linen" : "Obsidian"}
+      onClick={() => setTweak("theme", isDark ? "light" : "dark")}
+    >
+      {isDark ? (
+        // Sun — switch TO light
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+        </svg>
+      ) : (
+        // Moon — switch TO dark
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
+function Header({
+  range,
+  setRange,
+  liveLabel,
+}: {
+  range: MetricsPeriod;
+  setRange: (next: MetricsPeriod) => void;
+  liveLabel: string;
+}) {
+  return (
+    <header className="header">
+      <div className="header__brand">
+        <div className="brand-mark">
+          <BrandMark />
+        </div>
+        <div className="header__title">
+          <h1>Inbound Carrier Sales</h1>
+          <div className="sub">Acme Logistics · Real-time operations</div>
+        </div>
+      </div>
+      <div className="header__right">
+        <div className="live">
+          <span className="live__dot" />
+          <span>Live · {liveLabel}</span>
+        </div>
+        <div className="seg" role="tablist" aria-label="Time period">
+          {RANGE_OPTIONS.map((r) => (
+            <button
+              key={r.value}
+              data-on={range === r.value}
+              onClick={() => setRange(r.value)}
+              type="button"
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+        <ThemeToggle />
+      </div>
+    </header>
+  );
+}
 
 export default function App() {
-  const [period, setPeriod] = useState<MetricsPeriod>("7d");
+  const [range, setRange] = useState<MetricsPeriod>("today");
+  const [activeCall, setActiveCall] = useState<Call | null>(null);
+  const [tick, setTick] = useState(0);
+
   const queryClient = useQueryClient();
-  const { data, isLoading, isFetching, isError, error } = useMetrics(period);
-  // Live SSE feed (additive to the 30s polling — see useLiveEvents).
+  const metricsQ = useMetrics(range);
+  const callsQ = useCalls({});
   const live = useLiveEvents();
 
-  const onPeriodChange = (next: MetricsPeriod) => {
-    setPeriod(next);
+  // Bump every 15s so the "Live · X ago" label refreshes.
+  useEffect(() => {
+    const id = window.setInterval(() => setTick((t) => t + 1), 15_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const onRangeChange = (next: MetricsPeriod) => {
+    setRange(next);
     queryClient.invalidateQueries({ queryKey: ["metrics"] });
   };
 
-  return (
-    <div className="min-h-screen text-slate-100">
-      {/* Ambient drifting dots behind everything (paused for reduced motion) */}
-      <Particles />
-      {/* Shared SVG defs (one set of gradients for every chart) */}
-      <GradientDefs />
+  // Pick the richer call list for the table + drawer.
+  const fullCallList: Call[] = useMemo(() => {
+    if (callsQ.data?.items?.length) return callsQ.data.items as Call[];
+    return metricsQ.data?.recent_calls ?? [];
+  }, [callsQ.data, metricsQ.data]);
 
-      <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-slate-950/70 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-6 py-4">
-          <div className="flex items-center gap-3">
-            <BrandMark />
-            <div className="leading-tight">
-              <h1 className="text-base font-semibold tracking-tight text-slate-100">
-                Inbound Carrier Sales
-              </h1>
-              <p className="text-[11px] tracking-wide text-slate-400">
-                Acme Logistics &middot; Real-time operations
-              </p>
+  const agg = useMemo(() => {
+    if (!metricsQ.data) return null;
+    return toAggView(metricsQ.data, fullCallList);
+  }, [metricsQ.data, fullCallList]);
+
+  const liveLabel = useMemo(() => {
+    void tick; // re-evaluate every tick
+    if (live.state !== "open") {
+      return live.state === "connecting" ? "connecting…" : "polling";
+    }
+    if (!live.lastEvent) return "just now";
+    const ageMs = Date.now() - live.lastEvent.ts;
+    if (ageMs < 4_000) return "just now";
+    const secs = Math.floor(ageMs / 1000);
+    if (secs < 60) return `${secs}s ago`;
+    const mins = Math.floor(secs / 60);
+    if (mins < 60) return `${mins}m ago`;
+    return `${Math.floor(mins / 60)}h ago`;
+  }, [live.state, live.lastEvent, tick]);
+
+  return (
+    <div className="app">
+      <Header range={range} setRange={onRangeChange} liveLabel={liveLabel} />
+
+      {agg ? (
+        <>
+          <KpiStrip agg={agg} period={range} />
+
+          <div className="grid" style={{ marginBottom: "var(--s-5)" }}>
+            <div className="card col-7">
+              <div className="card__head">
+                <div>
+                  <h3 className="card__title">Conversion funnel</h3>
+                  <div className="card__sub">Inbound → vetted → matched → booked</div>
+                </div>
+              </div>
+              <Funnel agg={agg} />
+            </div>
+            <div className="card col-5">
+              <div className="card__head">
+                <div>
+                  <h3 className="card__title">Revenue</h3>
+                  <div className="card__sub">Rate negotiated vs. loadboard</div>
+                </div>
+              </div>
+              <Revenue agg={agg} />
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <LiveIndicator
-              state={live.state}
-              lastEventTs={live.lastEvent?.ts ?? null}
-              eventCount={live.eventCount}
-            />
-            <PeriodSelector value={period} onPeriodChange={onPeriodChange} />
-          </div>
-        </div>
-      </header>
 
-      <main className="mx-auto max-w-[1600px] px-6 py-6 animate-fade-up">
-        <div className="mb-6">
-          {isLoading ? (
-            <KpiBarSkeleton />
-          ) : data ? (
-            <KpiBar
-              data={data.kpi}
-              prior={null}
-              loading={isFetching}
-              timeseries={data.timeseries}
-            />
-          ) : (
-            <KpiBarError message={(error as Error | null)?.message ?? null} />
-          )}
-        </div>
-
-        {isError && !isLoading && (
-          <div className="mb-5 rounded-xl border border-rose-500/30 bg-rose-950/30 px-4 py-3 text-sm text-rose-200">
-            <p className="font-semibold">Failed to load metrics.</p>
-            <p className="mt-0.5 break-words text-xs text-rose-300/80">
-              {(error as Error | null)?.message}
-            </p>
-          </div>
-        )}
-
-        <div className="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <ErrorBoundary>
-            <Card
-              title="Conversion Funnel"
-              subtitle="Inbound → vetted → matched → booked"
-              tone="warm"
-            >
-              {data ? (
-                <ConversionFunnel data={data.funnel} />
-              ) : (
-                <ChartSkeleton height={340} />
-              )}
-            </Card>
-          </ErrorBoundary>
-
-          <ErrorBoundary>
-            <Card title="Revenue" subtitle="Rate negotiated vs. loadboard" tone="cool">
-              {data ? (
-                <RevenueStrip data={data.revenue} />
-              ) : (
-                <ChartSkeleton height={260} />
-              )}
-            </Card>
-          </ErrorBoundary>
-
-          <ErrorBoundary>
-            <Card
-              title="Call Volume"
-              subtitle="Total calls and bookings over time"
-            >
-              {data ? (
-                <TimeSeries data={data.timeseries} period={period} />
-              ) : (
-                <ChartSkeleton height={280} />
-              )}
-            </Card>
-          </ErrorBoundary>
-
-          <ErrorBoundary>
-            <Card
-              title="Negotiation Performance"
-              subtitle="Outcome and discount by round"
-              tone="warm"
-            >
-              {data ? (
-                <NegotiationAnalytics data={data.negotiation} />
-              ) : (
-                <ChartSkeleton height={280} />
-              )}
-            </Card>
-          </ErrorBoundary>
-        </div>
-
-        <div className="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <ErrorBoundary>
-            <Card
-              title="Carrier Vetting"
-              subtitle="FMCSA pass rate + failure reasons"
-              tone="muted"
-            >
-              {data ? (
-                <VettingBreakdown data={data.vetting} />
-              ) : (
-                <ChartSkeleton height={220} />
-              )}
-            </Card>
-          </ErrorBoundary>
-
-          <ErrorBoundary>
-            <Card
-              title="Sentiment"
-              subtitle="Carrier mood and how it maps to outcomes"
-              tone="cool"
-            >
-              {data ? (
-                <SentimentChart
-                  data={data.sentiment}
-                  period={period}
-                  recentCalls={data.recent_calls}
-                />
-              ) : (
-                <ChartSkeleton height={280} />
-              )}
-            </Card>
-          </ErrorBoundary>
-        </div>
-
-        <div className="mb-6">
-          <ErrorBoundary>
-            <Card
-              title="Load Matching"
-              subtitle="Top lanes and equipment requested"
-            >
-              {data ? (
-                <LoadMatching
-                  data={data.load_matching}
-                  recentCalls={data.recent_calls}
-                />
-              ) : (
-                <ChartSkeleton height={220} />
-              )}
-            </Card>
-          </ErrorBoundary>
-        </div>
-
-        <ErrorBoundary>
-          <Card
-            title="Recent Calls"
-            subtitle="Click a row to reveal transcript summary"
-            bodyClassName="p-0"
-          >
-            {data ? (
-              <RecentCalls calls={data.recent_calls} />
-            ) : (
-              <div className="p-6">
-                <ChartSkeleton height={200} />
+          <div className="grid" style={{ marginBottom: "var(--s-5)" }}>
+            <div className="card col-7">
+              <div className="card__head">
+                <div>
+                  <h3 className="card__title">Call volume</h3>
+                  <div className="card__sub">
+                    Total calls and bookings over the selected period (UTC, hourly buckets)
+                  </div>
+                </div>
+                <div className="legend">
+                  <span className="legend__item">
+                    <span className="legend__dot" style={{ background: "var(--brand)" }} /> Total calls
+                  </span>
+                  <span className="legend__item">
+                    <span className="legend__dot" style={{ background: "var(--good)" }} /> Booked
+                  </span>
+                </div>
               </div>
-            )}
-          </Card>
-        </ErrorBoundary>
-
-        <footer className="mt-10 flex flex-col items-center gap-1 text-center text-[10px] uppercase tracking-[0.16em] text-slate-600">
-          <span>Inbound Carrier Sales</span>
-          <span className="text-slate-700">
-            Acme Logistics &middot; HappyRobot FDE submission
-          </span>
-        </footer>
-      </main>
-
-      {/* Live event toast — bottom right corner. */}
-      <LiveEventToast events={live.recent} onDismiss={live.ackEvent} />
-    </div>
-  );
-}
-
-function BrandMark() {
-  return (
-    <div className="relative">
-      <div
-        className="flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-lg shadow-indigo-500/30 ring-1 ring-white/10"
-        style={{
-          background:
-            "linear-gradient(135deg, #6366f1 0%, #06b6d4 50%, #10b981 100%)",
-        }}
-      >
-        <TruckIcon size={20} />
-      </div>
-      <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-tr from-white/10 to-transparent" />
-    </div>
-  );
-}
-
-function KpiBarSkeleton() {
-  return (
-    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div
-          key={i}
-          className="glass-surface rounded-2xl px-5 py-4"
-        >
-          <div className="flex items-start justify-between">
-            <Skeleton className="h-7 w-7 rounded-lg" />
-            <Skeleton className="h-4 w-12 rounded-full" />
+              <CallTimeline hourly={agg.hourly} />
+            </div>
+            <div className="card col-5">
+              <div className="card__head">
+                <div>
+                  <h3 className="card__title">Negotiation performance</h3>
+                  <div className="card__sub">Outcome and discount by round</div>
+                </div>
+                <div className="legend">
+                  <span className="legend__item">
+                    <span className="legend__dot" style={{ background: "var(--good)" }} /> Agreed
+                  </span>
+                  <span className="legend__item">
+                    <span className="legend__dot" style={{ background: "var(--warn)" }} /> Walked
+                  </span>
+                  <span className="legend__item">
+                    <span className="legend__dot" style={{ background: "var(--info)" }} /> Avg discount
+                  </span>
+                </div>
+              </div>
+              <NegotiationChart byRound={agg.byRound} />
+            </div>
           </div>
-          <Skeleton className="mt-3 h-3 w-20" />
-          <Skeleton className="mt-2 h-9 w-32" />
-          <Skeleton className="mt-2 h-2 w-24" />
-          <Skeleton className="mt-3 h-[44px] w-full" />
-        </div>
-      ))}
-    </div>
-  );
-}
 
-function KpiBarError({ message }: { message: string | null }) {
-  return (
-    <div className="rounded-2xl border border-rose-500/30 bg-rose-950/30 p-5 text-sm text-rose-200">
-      <p className="font-semibold">KPIs unavailable</p>
-      <p className="mt-1 text-xs text-rose-300/80">
-        {message ?? "The metrics endpoint is unreachable."}
-      </p>
+          <div className="grid" style={{ marginBottom: "var(--s-5)" }}>
+            <div className="card col-4">
+              <div className="card__head">
+                <div>
+                  <h3 className="card__title">Carrier vetting</h3>
+                  <div className="card__sub">FMCSA pass rate + failure reasons</div>
+                </div>
+              </div>
+              <VettingCard agg={agg} />
+            </div>
+            <div className="card col-8">
+              <div className="card__head">
+                <div>
+                  <h3 className="card__title">Sentiment × outcome</h3>
+                  <div className="card__sub">
+                    Carrier mood and how it maps to outcomes — click a cell to drill in
+                  </div>
+                </div>
+              </div>
+              <SentimentHeatmap
+                sentOut={agg.sentOut}
+                onCellClick={(s, o) => {
+                  const match = fullCallList.find(
+                    (c) => c.sentiment === s && c.outcome === o,
+                  );
+                  if (match) setActiveCall(match);
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="grid" style={{ marginBottom: "var(--s-5)" }}>
+            <div className="card col-12">
+              <div className="card__head">
+                <div>
+                  <h3 className="card__title">What the agent noticed today</h3>
+                  <div className="card__sub">
+                    Auto-detected anomalies and opportunities from the selected window
+                  </div>
+                </div>
+              </div>
+              <Anomalies agg={agg} />
+            </div>
+          </div>
+
+          <div className="grid" style={{ marginBottom: "var(--s-5)" }}>
+            <div className="card col-7">
+              <div className="card__head">
+                <div>
+                  <h3 className="card__title">Top lanes by volume</h3>
+                  <div className="card__sub">Where carriers are calling from and going to</div>
+                </div>
+              </div>
+              <TopLanes laneCounts={agg.laneCounts} />
+            </div>
+            <div className="card col-5">
+              <div className="card__head">
+                <div>
+                  <h3 className="card__title">State-to-state flow</h3>
+                  <div className="card__sub">Top 10 lanes · width = call volume</div>
+                </div>
+              </div>
+              <LaneFlow lanes={agg.LANES} />
+            </div>
+          </div>
+
+          <CallsTable
+            calls={fullCallList}
+            activeId={activeCall?.call_id}
+            onPick={setActiveCall}
+          />
+        </>
+      ) : metricsQ.isLoading ? (
+        <div className="card" style={{ marginTop: "var(--s-6)" }}>
+          <div className="card__sub">Loading metrics…</div>
+        </div>
+      ) : metricsQ.isError ? (
+        <div className="card" style={{ marginTop: "var(--s-6)" }}>
+          <div className="card__title">Couldn&apos;t load metrics</div>
+          <div className="card__sub">
+            {(metricsQ.error as Error | null)?.message ?? "Unknown error"}
+          </div>
+        </div>
+      ) : null}
+
+      {activeCall && (
+        <CallDrawer call={activeCall} onClose={() => setActiveCall(null)} />
+      )}
+
+      <TweaksPanel />
     </div>
   );
 }

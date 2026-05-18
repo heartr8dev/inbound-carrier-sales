@@ -1,0 +1,254 @@
+/* ============================================================
+   Acme Dashboard — neumorphic linen/obsidian design tokens.
+   Ported from the Claude Design bundle.
+   Fonts are preloaded via <link> in index.html; the @import
+   below is kept as a fallback for standalone use.
+   ============================================================ */
+
+/* ============================================================
+   COLOR — LIGHT (default: linen & ink)
+   ============================================================ */
+:root,
+:root[data-theme="light"] {
+  /* Surfaces — ALL same family so neumorphic shadows read */
+  --surface-0: #e8e3d8;        /* page bg — the "linen" */
+  --surface-1: #ede8dd;        /* raised card */
+  --surface-2: #e2ddd2;        /* recessed well / input bg */
+  --surface-edge: #d8d2c5;     /* hairline divider */
+
+  /* Foreground — warm ink, not pure black */
+  --fg-1: #2a1f18;             /* primary ink */
+  --fg-2: #5a4a3e;             /* body */
+  --fg-3: #8a7a6a;             /* meta / captions */
+  --fg-4: #b8a898;             /* placeholder / disabled */
+  --fg-on-accent: #f4ecdc;     /* text on saturated accent */
+
+  /* Accents — restrained, sensual */
+  --accent-rouge: #8b3a3a;     /* primary CTA — dried-rose */
+  --accent-rouge-soft: #a85555;
+  --accent-amber: #c4894a;     /* secondary — candlelit */
+  --accent-plum: #5a3a52;      /* tertiary — used sparingly */
+  --accent-sage: #6a7a5a;      /* success / safe */
+  --accent-warn: #b85c2a;      /* warnings */
+  --accent-mature: #7a2838;    /* age-gated / explicit tag */
+
+  /* Glass / liquid surfaces (used in reader) */
+  --glass-bg: rgba(237, 232, 221, 0.55);
+  --glass-edge: rgba(255, 245, 225, 0.6);
+  --glass-shade: rgba(42, 31, 24, 0.08);
+
+  /* Neumorphic shadow recipe — light highlight + warm shade */
+  --neu-light: rgba(255, 250, 240, 0.95);
+  --neu-shade: rgba(110, 88, 70, 0.32);
+
+  /* Raised — convex pill / button at rest */
+  --neu-raised:
+    -6px -6px 14px var(--neu-light),
+     6px  6px 14px var(--neu-shade);
+  --neu-raised-sm:
+    -3px -3px 6px var(--neu-light),
+     3px  3px 6px var(--neu-shade);
+  --neu-raised-lg:
+    -12px -12px 28px var(--neu-light),
+     12px  12px 28px var(--neu-shade);
+
+  /* Pressed — concave / active state */
+  --neu-pressed:
+    inset -4px -4px 9px var(--neu-light),
+    inset  4px  4px 9px var(--neu-shade);
+  --neu-pressed-sm:
+    inset -2px -2px 4px var(--neu-light),
+    inset  2px  2px 4px var(--neu-shade);
+
+  /* Inset — wells, inputs, recessed panels */
+  --neu-inset:
+    inset -3px -3px 7px var(--neu-light),
+    inset  4px  4px 9px var(--neu-shade);
+
+  /* Floating — modals, menus */
+  --neu-float:
+    -18px -18px 40px var(--neu-light),
+     18px  18px 40px var(--neu-shade);
+
+  /* Subtle ambient — for cards that should feel "settled" */
+  --neu-soft:
+    -2px -2px 6px var(--neu-light),
+     4px  4px 12px var(--neu-shade);
+
+  --hairline: 1px solid rgba(110, 88, 70, 0.12);
+
+  color-scheme: light;
+}
+
+/* ============================================================
+   COLOR — DARK (obsidian, where most reading happens)
+   ============================================================ */
+:root[data-theme="dark"] {
+  --surface-0: #1a1612;
+  --surface-1: #221d18;
+  --surface-2: #15110d;
+  --surface-edge: #2c2620;
+
+  --fg-1: #f0e6d2;
+  --fg-2: #c4b8a4;
+  --fg-3: #8a7e6a;
+  --fg-4: #5a4e42;
+  --fg-on-accent: #f4ecdc;
+
+  --accent-rouge: #c45656;
+  --accent-rouge-soft: #d97777;
+  --accent-amber: #e0a866;
+  --accent-plum: #8a5a7a;
+  --accent-sage: #92a07a;
+  --accent-warn: #d68450;
+  --accent-mature: #d05068;
+
+  --glass-bg: rgba(34, 29, 24, 0.5);
+  --glass-edge: rgba(244, 236, 220, 0.08);
+  --glass-shade: rgba(0, 0, 0, 0.5);
+
+  /* Dark neumorphism — soft highlight from "warm candle" + deep shade */
+  --neu-light: rgba(58, 48, 38, 0.85);
+  --neu-shade: rgba(0, 0, 0, 0.65);
+
+  --neu-raised:
+    -6px -6px 14px var(--neu-light),
+     6px  6px 14px var(--neu-shade);
+  --neu-raised-sm:
+    -3px -3px 6px var(--neu-light),
+     3px  3px 6px var(--neu-shade);
+  --neu-raised-lg:
+    -12px -12px 28px var(--neu-light),
+     12px  12px 28px var(--neu-shade);
+
+  --neu-pressed:
+    inset -4px -4px 9px var(--neu-light),
+    inset  4px  4px 9px var(--neu-shade);
+  --neu-pressed-sm:
+    inset -2px -2px 4px var(--neu-light),
+    inset  2px  2px 4px var(--neu-shade);
+
+  --neu-inset:
+    inset -3px -3px 7px var(--neu-light),
+    inset  4px  4px 9px var(--neu-shade);
+
+  --neu-float:
+    -18px -18px 40px var(--neu-light),
+     18px  18px 40px var(--neu-shade);
+
+  --neu-soft:
+    -2px -2px 6px var(--neu-light),
+     4px  4px 12px var(--neu-shade);
+
+  --hairline: 1px solid rgba(244, 236, 220, 0.06);
+
+  color-scheme: dark;
+}
+
+/* ============================================================
+   TYPE — base scale & semantic styles
+   ============================================================ */
+:root {
+  /* Families */
+  --font-display: 'Cormorant Garamond', 'GT Sectra', 'Recoleta', serif;
+  --font-serif:   'Cormorant Garamond', 'Iowan Old Style', Georgia, serif;
+  --font-sans:    'Geist', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+
+  /* Weights */
+  --w-light: 300;
+  --w-regular: 400;
+  --w-medium: 500;
+  --w-semibold: 600;
+  --w-bold: 700;
+
+  /* Sizes — fluid where sensible */
+  --t-display-xl: clamp(56px, 8vw, 112px);
+  --t-display-lg: clamp(40px, 5.5vw, 72px);
+  --t-display-md: clamp(32px, 4vw, 52px);
+  --t-h1:  40px;
+  --t-h2:  30px;
+  --t-h3:  22px;
+  --t-h4:  18px;
+  --t-body-lg: 18px;
+  --t-body: 15px;
+  --t-body-sm: 13px;
+  --t-caption: 12px;
+  --t-overline: 11px;
+
+  /* Spacing scale */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-7: 32px;
+  --s-8: 40px;
+  --s-9: 56px;
+  --s-10: 72px;
+  --s-11: 96px;
+
+  /* Radius — neumorphism wants generous, soft */
+  --r-1: 6px;
+  --r-2: 10px;
+  --r-3: 16px;
+  --r-4: 22px;
+  --r-5: 32px;
+  --r-pill: 999px;
+
+  /* Motion */
+  --ease-soft:  cubic-bezier(0.4, 0.0, 0.2, 1);
+  --ease-press: cubic-bezier(0.5, 0.0, 0.1, 1);
+  --d-fast: 140ms;
+  --d-base: 240ms;
+  --d-slow: 420ms;
+}
+
+/* ---------- Semantic typography ---------- */
+.t-display-xl { font-family: var(--font-display); font-weight: var(--w-light); font-size: var(--t-display-xl); line-height: 0.95; letter-spacing: -0.02em; font-style: italic; }
+.t-display-lg { font-family: var(--font-display); font-weight: var(--w-regular); font-size: var(--t-display-lg); line-height: 1.0;  letter-spacing: -0.018em; }
+.t-display-md { font-family: var(--font-display); font-weight: var(--w-regular); font-size: var(--t-display-md); line-height: 1.05; letter-spacing: -0.012em; }
+
+.t-h1 { font-family: var(--font-display); font-weight: var(--w-medium);  font-size: var(--t-h1); line-height: 1.1; letter-spacing: -0.01em; }
+.t-h2 { font-family: var(--font-display); font-weight: var(--w-medium);  font-size: var(--t-h2); line-height: 1.15; letter-spacing: -0.008em; }
+.t-h3 { font-family: var(--font-sans);    font-weight: var(--w-semibold); font-size: var(--t-h3); line-height: 1.25; letter-spacing: -0.005em; }
+.t-h4 { font-family: var(--font-sans);    font-weight: var(--w-semibold); font-size: var(--t-h4); line-height: 1.3; }
+
+.t-prose       { font-family: var(--font-serif); font-weight: var(--w-regular); font-size: var(--t-body-lg); line-height: 1.65; }
+.t-prose-italic{ font-family: var(--font-serif); font-style: italic; font-weight: var(--w-regular); font-size: var(--t-body-lg); line-height: 1.65; }
+.t-body        { font-family: var(--font-sans);  font-weight: var(--w-regular); font-size: var(--t-body); line-height: 1.55; }
+.t-body-sm     { font-family: var(--font-sans);  font-weight: var(--w-regular); font-size: var(--t-body-sm); line-height: 1.5; }
+.t-caption     { font-family: var(--font-sans);  font-weight: var(--w-medium);  font-size: var(--t-caption); line-height: 1.4; color: var(--fg-3); }
+.t-overline    { font-family: var(--font-sans);  font-weight: var(--w-semibold); font-size: var(--t-overline); line-height: 1.2; letter-spacing: 0.18em; text-transform: uppercase; color: var(--fg-3); }
+.t-mono        { font-family: var(--font-mono);  font-weight: var(--w-regular); font-size: var(--t-body-sm); line-height: 1.4; }
+
+/* ---------- Base reset ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  background: var(--surface-0);
+  color: var(--fg-1);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---------- Reusable neumorphic primitives ---------- */
+.neu-card     { background: var(--surface-1); border-radius: var(--r-3); box-shadow: var(--neu-raised); }
+.neu-card-soft{ background: var(--surface-1); border-radius: var(--r-3); box-shadow: var(--neu-soft); }
+.neu-well     { background: var(--surface-2); border-radius: var(--r-3); box-shadow: var(--neu-inset); }
+.neu-pill     { background: var(--surface-1); border-radius: var(--r-pill); box-shadow: var(--neu-raised-sm); }
+.neu-pressed  { background: var(--surface-1); border-radius: var(--r-3); box-shadow: var(--neu-pressed); }
+
+/* Liquid glass — used in the reader overlay */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-4);
+  box-shadow:
+    inset 1px 1px 0 var(--glass-edge),
+    0 20px 40px var(--glass-shade);
+}
