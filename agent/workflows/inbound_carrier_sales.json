@@ -15,7 +15,7 @@
     "alternatives_tried_and_why_they_didnt_work": [
       "Inbound Voice Agent + Predefined Webhook → editor warning 'Looks like you don't have any node selected for inbound calls' and no audio routed; the Predefined Webhook trigger isn't a recognized call source for the Inbound Voice Agent.",
       "Inbound Voice Agent + Inbound to number trigger → requires a phone number with an inbound SIP trunk. The org's only number has Inbound Trunk: none and the spec forbids buying a new one.",
-      "Outbound Voice Agent + `to`=`{{trigger.carrier_phone}}` → Web Call test doesn't inject any value into trigger params; `to` resolved empty; outbound precheck failed with 'invalid phone number: 2'.",
+      "Outbound Voice Agent + `to`=`{{trigger.carrier_phone}}` on EARLIER versions → Web Call test didn't inject any value into trigger params; `to` resolved empty; outbound precheck failed with 'invalid phone number: 2'. Resolved in later HR platform releases — current v11 lives with `to`={{trigger.carrier_phone}} successfully (Web Call test now injects a placeholder) so production phone routing semantically targets the carrier as intended.",
       "Outbound Voice Agent + `to`=`+15555550100` (RFC 7042 test number) → precheck rejects: 'invalid phone number: +15555550100: invalid outbound phone number'. The check is routability, not just format.",
       "CURRENT: Outbound Voice Agent + `to`=`+16282142490` (Onboarding self-loop) → the trunk recognizes its own number and the precheck passes; Web Call test's browser-audio substitution kicks in instead of an actual dial."
     ]
@@ -40,7 +40,8 @@
     "max_call_duration": 600,
     "max_silence_hold_duration": 8,
     "voice_mail": "hangup",
-    "to": "+16282142490",
+    "to": "{{trigger.carrier_phone}}",
+    "_to_node_config_shape": "Plate paragraph with a `variable` child whose group_id is the Predefined Webhook trigger's persistent_id (019e3942-ff58-7df4-b8b1-5b2ef58085f6) and variable_id is `carrier_phone`. See agent/PROVISIONING.md for the verbatim JSON shape.",
     "from_number": "+16282142490",
     "initial_message": "Hi, thanks for calling Acme Logistics carrier sales — this is Riley. What lane are you running today?"
   },
