@@ -417,3 +417,124 @@ async def test_get_calls_filter_by_date_range(
     new_items = [item for item in data["items"] if item["call_id"].startswith(tag)]
     assert len(new_items) == 1
     assert new_items[0]["call_id"] == f"{tag}-new"
+
+
+# --------------------------------------------------------------------------- #
+# 8. POST /calls/log — integration coverage for every remaining CallOutcome.
+#
+# TRANSFERRED_TO_REP is already exercised end-to-end above. The other 6 outcomes
+# only had unit-level coverage on classify_outcome. These fixtures POST the rich
+# payload that the HappyRobot AI Extract node sends and assert that the route
+# returns the right outcome AND persists it — locking the wire-level contract.
+# --------------------------------------------------------------------------- #
+
+
+async def _post_and_assert_outcome(
+    client: AsyncClient,
+    cleanup_call_ids: list[str],
+    *,
+    body_overrides: dict[str, object],
+    expected_outcome: CallOutcome,
+) -> None:
+    call_id = f"test-{uuid.uuid4()}"
+    cleanup_call_ids.append(call_id)
+    body: dict[str, object] = {"call_id": call_id, **body_overrides}
+    res = await client.post(f"{API_PREFIX}/calls/log", json=body)
+    assert res.status_code == 200, res.text
+    assert res.json()["outcome"] == expected_outcome.value
+
+    with psycopg2.connect(_sync_dsn()) as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT outcome FROM call_logs WHERE call_id = %s", (call_id,)
+        )
+        row = cur.fetchone()
+    assert row is not None
+    assert row[0] == expected_outcome.value
+
+
+@pytest.mark.asyncio(loop_scope="session")
+async def test_post_log_classifies_booked(
+    client: AsyncClient, cleanup_call_ids: list[str]
+) -> None:
+    await _post_and_assert_outcome(
+        client,
+        cleanup_call_ids,
+        body_overrides={
+            "final_agreed_rate": "2500.00",
+            "transferred": False,
+            "negotiation_rounds": 2,
+            "loadboard_rate": "2400.00",
+        },
+        expected_outcome=CallOutcome.BOOKED,
+    )
+
+
+@pytest.mark.asyncio(loop_scope="session")
+async def test_post_log_classifies_carrier_failed_vetting(
+    client: AsyncClient, cleanup_call_ids: list[str]
+) -> None:
+    await _post_and_assert_outcome(
+        client,
+        cleanup_call_ids,
+        body_overrides={
+            "vetting_passed": False,
+            "carrier_mc": "999000",
+            "transcript_summary": "MC not in FMCSA records.",
+        },
+        expected_outcome=CallOutcome.CARRIER_FAILED_VETTING,
+    )
+
+
+@pytest.mark.asyncio(loop_scope="session")
+async def test_post_log_classifies_no_matching_loads(
+    client: AsyncClient, cleanup_call_ids: list[str]
+) -> None:
+    await _post_and_assert_outcome(
+        client,
+        cleanup_call_ids,
+        body_overrides={
+            "vetting_passed": True,
+            "loads_searched": True,
+            "matches_returned": 0,
+            "origin_requested": "Detroit, MI",
+            "destination_requested": "Toledo, OH",
+        },
+        expected_outcome=CallOutcome.NO_MATCHING_LOADS,
+    )
+
+
+@pytest.mark.asyncio(loop_scope="session")
+async def test_post_log_classifies_negotiation_stalled(
+    client: AsyncClient, cleanup_call_ids: list[str]
+) -> None:
+    await _post_and_assert_outcome(
+        client,
+        cleanup_call_ids,
+        body_overrides={
+            "vetting_passed": True,
+            "loads_searched": True,
+            "matches_returned": 2,
+            "negotiation_rounds": 3,
+            "final_agreed_rate": None,
+            "loadboard_rate": "2690.00",
+            "initial_carrier_ask": "2300.00",
+        },
+        expected_outcome=CallOutcome.NEGOTIATION_STALLED,
+    )
+
+
+@pytest.mark.asyncio(loop_scope="session")
+async def test_post_log_classifies_carrier_hung_up(
+    client: AsyncClient, cleanup_call_ids: list[str]
+) -> None:
+    # Minimal payload: no rate, no vetting outcome, no search, no rounds.
+    # Falls through to the default branch.
+    await _post_and_assert_outcome(
+        client,
+        cleanup_call_ids,
+        body_overrides={
+            "carrier_mc": "123456",
+            "transcript_summary": "Carrier said hold on then dropped.",
+        },
+        expected_outcome=CallOutcome.CARRIER_HUNG_UP,
+    )

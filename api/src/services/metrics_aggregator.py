@@ -131,9 +131,14 @@ async def _kpi_and_revenue(
             0,
         ).label("avg_margin_saved"),
         func.coalesce(func.avg(CallLog.negotiation_rounds), 0).label("avg_rounds"),
-        func.avg(case((has_lb, CallLog.loadboard_rate), else_=None)).label(
-            "avg_loadboard"
-        ),
+        # Average loadboard rate *for booked calls only* — that's the
+        # comparable denominator for avg_booked_rate. If we averaged across
+        # all calls, no-match and failed-vetting calls (which can have any
+        # loadboard rate) would skew the comparison and yield avg_booked >
+        # avg_loadboard, breaking the rate-strip visualisation.
+        func.avg(
+            case((and_(booked, has_lb, has_final), CallLog.loadboard_rate), else_=None)
+        ).label("avg_loadboard"),
         func.avg(
             case((and_(booked, has_final), CallLog.final_agreed_rate), else_=None)
         ).label("avg_booked"),
