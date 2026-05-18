@@ -444,9 +444,7 @@ async def _post_and_assert_outcome(
     assert res.json()["outcome"] == expected_outcome.value
 
     with psycopg2.connect(_sync_dsn()) as conn, conn.cursor() as cur:
-        cur.execute(
-            "SELECT outcome FROM call_logs WHERE call_id = %s", (call_id,)
-        )
+        cur.execute("SELECT outcome FROM call_logs WHERE call_id = %s", (call_id,))
         row = cur.fetchone()
     assert row is not None
     assert row[0] == expected_outcome.value
