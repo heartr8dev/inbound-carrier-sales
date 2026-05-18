@@ -1,27 +1,32 @@
 {
   "name": "Inbound Carrier Sales",
-  "workflow_id": "019e29c8-f3a7-7a7c-b7f8-404f9ab6a8f5",
-  "slug": "avu4wpit44bg",
-  "current_live_version_id": "019e29c8-f3af-7641-8d9c-048a176767d7",
-  "current_live_version_slug": "ihaast3ecgnc",
+  "workflow_id": "019e3942-ff37-7e66-8eff-b54ca540cb97",
+  "slug": "grrt9qrecza3",
+  "current_live_version_id": "019e3942-ff41-78db-b68c-dcd1acf90078",
+  "current_live_version_slug": "x7slw5glddzx",
   "current_live_version_number": 1,
   "environment": "production",
-  "editor_url": "https://platform.happyrobot.ai/fdeharrysoiland/workflow/avu4wpit44bg/editor/ihaast3ecgnc",
-  "description": "Acme Logistics inbound carrier sales — Inbound Voice Agent + Predefined Webhook trigger (Web Call test pattern, no phone numbers).",
+  "editor_url": "https://platform.happyrobot.ai/fdeharrysoiland/workflow/grrt9qrecza3/editor/x7slw5glddzx",
+  "description": "Acme Logistics carrier sales — Outbound Voice Agent + Predefined Webhook (HR Voice Agent template pattern). `to` and `from_number` both set to the org's Onboarding number (+16282142490) so the trunk's outbound-routability precheck passes; HR's editor Web Call button substitutes browser audio for the actual dial-out.",
 
   "spec_alignment": {
     "spec": "Do not buy a phone number on the platform. Use the web call trigger feature.",
-    "shape": "Inbound Voice Agent (event 0192e5dc-08df-78bf-a549-f43c6bf9f087) + Predefined Webhook trigger (event b329e750-...). No `to`, no `from_number`, no SIP-trunk routability check. The agent's `call` field references the trigger node — HR's editor 'Web Call' button creates a browser audio session bound to that trigger; the Inbound Voice Agent picks up the room and runs.",
-    "why_not_outbound": "Earlier we tried Outbound Voice Agent (matching HR's pre-built Voice Agent template) but it requires `to` + `from_number`. The trunk's outbound precheck rejected RFC 7042 test numbers as 'invalid outbound phone number' (run c10abc6b), and the org has no inbound SIP trunk on the only phone number anyway. Inbound Voice Agent has no such precheck.",
-    "why_not_inbound_phone_trigger": "Inbound to number trigger (event 0192a20c-cb70-7bf2-977a-b7edc14dcd66) requires a phone number with an inbound SIP trunk. The org's only number — Onboarding +16282142490 — has `Inbound Trunk: none`. Spec forbids buying a new number."
+    "shape": "Outbound Voice Agent (event 0192e5dc-090a-7f57-87a0-76308ed6ef28) + Predefined Webhook trigger (event b329e750-...). Both `to` and `from_number` reference the org's pre-provisioned Onboarding number — no new phone-number purchase. HR's editor Web Call button creates a browser audio session that the agent picks up in place of the outbound dial. This matches the structure of HR's pre-built `Voice Agent` template in the org.",
+    "alternatives_tried_and_why_they_didnt_work": [
+      "Inbound Voice Agent + Predefined Webhook → editor warning 'Looks like you don't have any node selected for inbound calls' and no audio routed; the Predefined Webhook trigger isn't a recognized call source for the Inbound Voice Agent.",
+      "Inbound Voice Agent + Inbound to number trigger → requires a phone number with an inbound SIP trunk. The org's only number has Inbound Trunk: none and the spec forbids buying a new one.",
+      "Outbound Voice Agent + `to`=`{{trigger.carrier_phone}}` → Web Call test doesn't inject any value into trigger params; `to` resolved empty; outbound precheck failed with 'invalid phone number: 2'.",
+      "Outbound Voice Agent + `to`=`+15555550100` (RFC 7042 test number) → precheck rejects: 'invalid phone number: +15555550100: invalid outbound phone number'. The check is routability, not just format.",
+      "CURRENT: Outbound Voice Agent + `to`=`+16282142490` (Onboarding self-loop) → the trunk recognizes its own number and the precheck passes; Web Call test's browser-audio substitution kicks in instead of an actual dial."
+    ]
   },
 
   "agent": {
     "name": "Riley",
-    "kind": "inbound_voice",
-    "event_id": "0192e5dc-08df-78bf-a549-f43c6bf9f087",
-    "persistent_id": "019e29c8-f3d1-7a19-9a1f-970ddcc81768",
-    "root_prompt_persistent_id": "019e29c8-f3d1-7a19-9a1f-970e571e3a94",
+    "kind": "outbound_voice",
+    "event_id": "0192e5dc-090a-7f57-87a0-76308ed6ef28",
+    "persistent_id": "019e3942-ff77-7dc5-a9ce-ae8d5a9cac23",
+    "root_prompt_persistent_id": "019e3942-ff77-7dc5-a9ce-ae8ed6f9d5ce",
     "model_id": "gpt-5.1-instant",
     "voice_id": "qpwlpzgt2xxw",
     "voice_name": "Jenna - Clear, Engaging and Warm",
@@ -34,52 +39,55 @@
     "record": true,
     "max_call_duration": 600,
     "max_silence_hold_duration": 8,
+    "voice_mail": "hangup",
+    "to": "+16282142490",
+    "from_number": "+16282142490",
     "initial_message": "Hi, thanks for calling Acme Logistics carrier sales — this is Riley. What lane are you running today?"
   },
 
   "trigger": {
     "type": "webhook_predefined",
     "event_id": "b329e750-2e0e-4618-ba65-e04bb6a93c5f",
-    "persistent_id": "019e29c8-f3c5-7bfa-83a4-8e3861c32ad8",
+    "persistent_id": "019e3942-ff58-7df4-b8b1-5b2ef58085f6",
     "params": ["call_id", "carrier_phone", "room_name"]
   },
 
   "tools": [
     {
       "name": "verify_carrier",
-      "persistent_id": "019e29c8-f3de-77d6-a1c9-66f991d68ee9",
-      "webhook_persistent_id": "019e29c8-f3e4-7943-a800-49c07467422f",
+      "persistent_id": "019e3942-ff8f-75a6-95ae-237d807db064",
+      "webhook_persistent_id": "019e3942-ff99-7c9c-b291-7d73d7e7e050",
       "endpoint": "/api/v1/carrier/verify",
       "body_mode": "builder",
       "body_data_keys": ["mc"]
     },
     {
       "name": "search_loads",
-      "persistent_id": "019e29c8-f3eb-7e9c-9826-a71107eccbf9",
-      "webhook_persistent_id": "019e29c8-f3f2-7889-883f-f7d62e28aaca",
+      "persistent_id": "019e3942-ffa6-7028-9e50-292985cf11e2",
+      "webhook_persistent_id": "019e3942-ffb0-7daa-b178-55bd4c417cdf",
       "endpoint": "/api/v1/loads/search",
       "body_mode": "builder",
       "body_data_keys": ["origin", "destination", "equipment_type", "pickup_date"]
     },
     {
       "name": "submit_offer",
-      "persistent_id": "019e29c8-f3f9-78cd-92f7-f5e1502eb6d3",
-      "webhook_persistent_id": "019e29c8-f3fd-7b8c-810f-6dbba56d315a",
+      "persistent_id": "019e3942-ffbe-78c5-ad99-fb7e1aae6b8f",
+      "webhook_persistent_id": "019e3942-ffc7-7920-9c7d-f8b260ed6369",
       "endpoint": "/api/v1/negotiate",
       "body_mode": "raw",
       "body_data_keys": ["load_id", "loadboard_rate", "round", "agent_last_offer", "carrier_offer", "carrier_sentiment", "origin", "destination"]
     },
     {
       "name": "transfer_call",
-      "persistent_id": "019e29c8-f405-7c96-a610-7d85a530e868",
-      "python_persistent_id": "019e29c8-f409-7c3f-8925-9f29f443f190",
+      "persistent_id": "019e3942-ffd6-7b5d-808a-efdac40fe065",
+      "python_persistent_id": "019e3942-ffdd-725a-8652-c3bef7abb6be",
       "endpoint": null
     }
   ],
 
   "post_call": {
-    "ai_extract_persistent_id": "019e29c8-f411-7bdf-ae37-6bfedd58afd4",
-    "log_webhook_persistent_id": "019e29c8-f419-7af5-8c9d-f80bf397907e",
+    "ai_extract_persistent_id": "019e3942-ffec-7afa-820f-648169fce7d4",
+    "log_webhook_persistent_id": "019e3942-fff9-7072-917d-7ad479a27ec1",
     "log_endpoint": "/api/v1/calls/log"
   }
 }
