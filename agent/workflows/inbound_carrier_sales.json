@@ -2,11 +2,11 @@
   "name": "Inbound Carrier Sales",
   "workflow_id": "019e3942-ff37-7e66-8eff-b54ca540cb97",
   "slug": "grrt9qrecza3",
-  "current_live_version_id": "019e3a1b-5c09-7932-ab2e-1a6576697520",
-  "current_live_version_slug": "zh2sn637wuz3",
-  "current_live_version_number": 11,
+  "current_live_version_id": "019e3afe-e344-77d5-9e51-ad8e71ffd260",
+  "current_live_version_slug": "e39pe60lvkfc",
+  "current_live_version_number": 12,
   "environment": "production",
-  "editor_url": "https://platform.happyrobot.ai/fdeharrysoiland/workflow/grrt9qrecza3/editor/zh2sn637wuz3",
+  "editor_url": "https://platform.happyrobot.ai/fdeharrysoiland/workflow/grrt9qrecza3/editor/e39pe60lvkfc",
   "description": "Acme Logistics carrier sales — Outbound Voice Agent + Predefined Webhook (HR Voice Agent template pattern). `to` and `from_number` both set to the org's Onboarding number (+16282142490) so the trunk's outbound-routability precheck passes; HR's editor Web Call button substitutes browser audio for the actual dial-out.",
 
   "spec_alignment": {
